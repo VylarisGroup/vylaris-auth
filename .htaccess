@@ -1,0 +1,11 @@
+# VylarisAuth – Variante B (Dokumentenstamm = Projektstamm): alles intern nach public/ leiten.
+# Besser: Dokumentenstamm der Domain auf public/ setzen (siehe docs/PLESK.md).
+Options -Indexes -MultiViews
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # ACME-Challenges (Let's Encrypt) nicht umleiten
+    RewriteRule ^\.well-known/acme-challenge/ - [L]
+    RewriteRule ^$ public/ [L]
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

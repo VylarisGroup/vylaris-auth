@@ -1,0 +1,53 @@
+# VylarisAuth – Apache-Konfiguration (Plesk/Shared Hosting)
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # HTTPS erzwingen
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Discovery auch dann bedienen, wenn ein echtes Verzeichnis .well-known existiert (z. B. von Plesk/Let's Encrypt angelegt)
+    RewriteRule ^\.well-known/openid-configuration$ index.php [L]
+    # Autorisierungsheader an PHP weiterreichen (Bearer-Token bei FastCGI)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    # Statische Dateien direkt ausliefern, alles andere an den Front Controller
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Dotfiles und sensible Dateitypen niemals ausliefern
+<FilesMatch "^\.|\.(env|ini|log|sql|md|lock|json|php\.dist|bak|sh)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+<FilesMatch "^(index|setup)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</FilesMatch>
+
+# Discovery-Dokument ausdrücklich freigeben, falls ein übergeordneter Apache-Block (Hoster/Plesk) Pfade mit
+# führendem Punkt sperrt. Hilft nur gegen Apache-Regeln – nicht gegen nginx, WAF oder ModSecurity des Hosters.
+<IfModule mod_authz_core.c>
+    <If "%{REQUEST_URI} == '/.well-known/openid-configuration'">
+        Require all granted
+    </If>
+</IfModule>
+
+# OPTIONAL (nur bei ModSecurity-403, Hoster muss .htaccess-Overrides erlauben – sonst Fehler 500, daher auskommentiert):
+# <IfModule mod_security2.c>
+#     <If "%{REQUEST_URI} == '/.well-known/openid-configuration'">
+#         SecRuleEngine Off
+#     </If>
+# </IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    <FilesMatch "\.(css|js|woff2?|svg)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+</IfModule>

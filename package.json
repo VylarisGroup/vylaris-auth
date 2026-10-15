@@ -1,0 +1,12 @@
+{
+  "name": "vylarisauth-assets",
+  "private": true,
+  "description": "Nur Build-Werkzeuge für CSS. Wird NICHT auf dem Server benötigt – public/assets/ ist eingecheckt.",
+  "scripts": {
+    "build": "tailwindcss -c tailwind.config.js -i assets-src/input.css -o public/assets/app.css --minify && node scripts/copy-boxicons.js"
+  },
+  "devDependencies": {
+    "boxicons": "2.1.4",
+    "tailwindcss": "3.4.17"
+  }
+}

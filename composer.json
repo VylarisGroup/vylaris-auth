@@ -1,0 +1,28 @@
+{
+    "name": "vylarisgroup/vylarisauth",
+    "description": "VylarisAuth – zentraler SSO-/OIDC-Dienst für VylarisGroup (keine Laufzeit-Abhängigkeiten)",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-openssl": "*",
+        "ext-sodium": "*",
+        "ext-mbstring": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Vylaris\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vylaris\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "php tests/run.php",
+        "migrate": "php bin/migrate.php"
+    }
+}

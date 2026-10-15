@@ -1,0 +1,5 @@
+# Diese Pfade landen nicht im Release-Archiv (Update-Download)
+/tests export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore

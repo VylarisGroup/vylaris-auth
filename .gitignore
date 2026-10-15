@@ -1,0 +1,9 @@
+# Nie ins Repository: Zugangsdaten, Schlüssel, Laufzeitdaten, Build-Werkzeuge
+/config/config.php
+/config/setup.token
+/var/*
+!/var/.gitkeep
+!/var/.htaccess
+/node_modules/
+/package-lock.json
+/.port
