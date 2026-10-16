@@ -10,7 +10,7 @@
   </dl>
 
   <?php if (!$configured): ?>
-    <p class="alert alert-err mt-4">Die Aktualisierung ist nicht eingerichtet. Tragen Sie in <code>config/config.php</code> den Block <code>update</code> ein (<code>repo</code> = <code>besitzer/name</code>, bei privaten Repositories zusätzlich <code>token</code>). Siehe docs/UPDATE.md.</p>
+    <p class="alert alert-err mt-4">Die Aktualisierung ist nicht eingerichtet. Die Quelle ist bewusst nicht über die Oberfläche änderbar. Sie wird ausschliesslich serverseitig in <code>config/config.php</code> im Block <code>update</code> festgelegt (<code>repo</code> = <code>besitzer/name</code>, bei privaten Repositories zusätzlich <code>token</code>). Siehe docs/UPDATE.md.</p>
   <?php elseif (!$zip): ?>
     <p class="alert alert-err mt-4">Die PHP-Erweiterung <code>zip</code> fehlt – Updates sind auf diesem Server nicht möglich.</p>
   <?php else: ?>

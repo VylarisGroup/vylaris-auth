@@ -37,6 +37,11 @@ final class LicenseClient
         }
     }
 
+    public function baseUrl(): string
+    {
+        return rtrim($this->baseUrl, '/');
+    }
+
     public function product(): string
     {
         return $this->product;
@@ -72,13 +77,13 @@ final class LicenseClient
         $b64 = preg_replace('/-----[A-Z ]+-----|\s+/', '', $this->publicKeyPem) ?? '';
         $der = base64_decode($b64, true);
         if ($der === false) {
-            throw new LicenseException('Der konfigurierte Lizenz-Schlüssel (license.public_key) ist ungültig.', 'NOT_CONFIGURED');
+            throw new LicenseException('Der eingebaute Lizenz-Schlüssel ist ungültig.', 'NOT_CONFIGURED');
         }
         if (strlen($der) === 44 && str_starts_with($der, "\x30\x2a\x30\x05\x06\x03\x2b\x65\x70\x03\x21\x00")) {
             $der = substr($der, 12);
         }
         if (strlen($der) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
-            throw new LicenseException('Der konfigurierte Lizenz-Schlüssel (license.public_key) ist kein Ed25519-Schlüssel.', 'NOT_CONFIGURED');
+            throw new LicenseException('Der eingebaute Lizenz-Schlüssel ist kein Ed25519-Schlüssel.', 'NOT_CONFIGURED');
         }
         return $this->rawKey = $der;
     }
@@ -86,7 +91,7 @@ final class LicenseClient
     private function call(string $endpoint, string $key, ?string $hwid, ?string $name): LicenseReply
     {
         if (!$this->configured()) {
-            throw new LicenseException('Das Lizenzsystem ist nicht eingerichtet (license.public_key fehlt).', 'NOT_CONFIGURED');
+            throw new LicenseException('Das Lizenzsystem ist nicht eingerichtet (Lizenz-Schlüssel fehlt).', 'NOT_CONFIGURED');
         }
         $pub = $this->publicKey();
         $body = ['key' => $key, 'product' => $this->product];

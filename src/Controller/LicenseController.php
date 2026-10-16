@@ -69,7 +69,7 @@ final class LicenseController extends BaseController
         }, $l->seatsByKey());
         return $this->render('admin/license', [
             'required' => $l->required(), 'configured' => $l->client()->configured(), 'fingerprint' => $l->client()->fingerprint(),
-            'product' => $l->client()->product(), 'apiUrl' => (string) $this->app->config->get('license.api_url', 'https://licence.vylaris.ch'),
+            'product' => $l->client()->product(), 'apiUrl' => $l->client()->baseUrl(),
             'features' => LicenseService::FEATURES, 'seats' => $seats, 'keyless' => $l->keylessUsers(),
             'releases' => (int) $this->app->db->scalar('SELECT COUNT(*) FROM license_releases'),
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),

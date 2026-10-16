@@ -69,12 +69,12 @@ final class Factory
     }
 
     /** Vollständige App (alle registrierten Module) mit Mail-Array-Transport. */
-    public static function app(array $configOverride = [], ?\Vylaris\Social\HttpClient $http = null, ?\Vylaris\Update\UpdateSource $update = null): object
+    public static function app(array $configOverride = [], ?\Vylaris\Social\HttpClient $http = null, ?\Vylaris\Update\UpdateSource $update = null, ?\Vylaris\License\LicenseClient $license = null): object
     {
         $config = self::config($configOverride);
         $db = self::db($config);
         $mail = new ArrayMailTransport();
-        $app = new App($config, $db, $mail, dirname(__DIR__, 2), $http, $update);
+        $app = new App($config, $db, $mail, dirname(__DIR__, 2), $http, $update, $license);
         \Vylaris\Core\Bootstrap::registerModules($app);
         return (object) compact('app', 'config', 'db', 'mail');
     }

@@ -27,19 +27,21 @@ final class LicenseService
         'audit_log' => 'Audit-Log einsehen (Admin)',
     ];
 
-    /** Öffentlicher Ed25519-Schlüssel des Lizenzservers (licence.vylaris.ch); gilt, wenn license.public_key nicht gesetzt ist. */
+    /** Fester Lizenzserver. Bewusst nicht konfigurierbar. */
+    public const API_URL = 'https://licence.vylaris.ch';
+
+    /** Produkt-Kennung beim Lizenzserver. Bewusst nicht konfigurierbar. */
+    public const PRODUCT = 'vylarisauth';
+
+    /** Fester öffentlicher Ed25519-Schlüssel des Lizenzservers. Bewusst nicht konfigurierbar. */
     public const DEFAULT_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAhV7L176abx5a05XciRbOOeFj6wkCnNiDrwEXw7KceiU=\n-----END PUBLIC KEY-----\n";
 
     private LicenseClient $client;
 
-    public function __construct(private Database $db, private Config $config, HttpClient $http, private RateLimiter $limiter, private AuditLogger $audit)
+    /** $client nur für Tests: In Betrieb gilt immer API_URL + DEFAULT_PUBLIC_KEY, nichts davon kommt aus der Config. */
+    public function __construct(private Database $db, private Config $config, HttpClient $http, private RateLimiter $limiter, private AuditLogger $audit, ?LicenseClient $client = null)
     {
-        $this->client = new LicenseClient(
-            $http,
-            (string) $config->get('license.api_url', 'https://licence.vylaris.ch'),
-            trim((string) $config->get('license.public_key', '')) ?: self::DEFAULT_PUBLIC_KEY,
-            (string) $config->get('license.product', 'vylarisauth'),
-        );
+        $this->client = $client ?? new LicenseClient($http, self::API_URL, self::DEFAULT_PUBLIC_KEY, self::PRODUCT);
     }
 
     public function client(): LicenseClient

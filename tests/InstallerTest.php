@@ -79,30 +79,15 @@ final class InstallerTest extends TestCase
         $this->assertSame('0640', substr(sprintf('%o', fileperms($this->root . '/config/config.php')), -4));
     }
 
-    public function testLicenseSettingsAreWrittenAndValidated(): void
+    public function testLicenseServerAndKeyAreNotWrittenToConfig(): void
     {
-        $srv = new \Vylaris\Tests\Support\FakeLicenseServer();
         $i = new Installer($this->root, true);
         file_put_contents($this->root . '/config/setup.token', bin2hex(random_bytes(16)));
-        $errs = $i->install($this->input(['license_public_key' => 'kein-schluessel!']));
-        $this->assertStringContains('Lizenz-Schlüssel', implode(' ', $errs));
-        $errs = $i->install($this->input(['license_api_url' => 'http://evil.example/x', 'license_public_key' => $srv->publicKeyPem]));
-        $this->assertStringContains('Lizenzservers', implode(' ', $errs));
-        $this->assertFalse($i->isLocked());
-        $this->assertSame([], $i->install($this->input(['license_public_key' => $srv->publicKeyPem])));
+        $this->assertSame([], $i->install($this->input(['license_api_url' => 'https://evil.example', 'license_public_key' => 'egal'])));
         $cfg = require $this->root . '/config/config.php';
         $this->assertTrue($cfg['license']['required']);
-        $this->assertSame('https://licence.vylaris.ch', $cfg['license']['api_url']);
-        $this->assertSame(trim($srv->publicKeyPem), $cfg["license"]["public_key"]);
-    }
-
-    public function testDefaultLicenseKeyIsUsedWhenFieldIsEmpty(): void
-    {
-        $i = new Installer($this->root, true);
-        file_put_contents($this->root . '/config/setup.token', bin2hex(random_bytes(16)));
-        $this->assertSame([], $i->install($this->input()));
-        $cfg = require $this->root . '/config/config.php';
-        $this->assertSame(trim(\Vylaris\License\LicenseService::DEFAULT_PUBLIC_KEY), $cfg['license']['public_key']);
+        $this->assertFalse(isset($cfg['license']['api_url']));
+        $this->assertFalse(isset($cfg['license']['public_key']));
     }
 
     public function testUpdateSettingsAreValidatedAndNormalized(): void

@@ -68,11 +68,8 @@ return [
     // Lizenzsystem (TRS License) – siehe docs/LIZENZ.md
     'license' => [
         'required'      => true,                              // neue Konten brauchen einen Lizenzschlüssel
-        'api_url'       => 'https://licence.vylaris.ch',
-        'product'       => 'vylarisauth',                     // Produkt-Kennung im Lizenzserver
-        // Öffentlicher Ed25519-Schlüssel des Lizenzservers. FEST eintragen, nie vom Server laden.
-        // Leer = eingebauter Schlüssel von licence.vylaris.ch (LicenseService::DEFAULT_PUBLIC_KEY).
-        'public_key'    => '',
+        // Lizenzserver, Produkt-Kennung und öffentlicher Schlüssel sind fest in die Software eingebaut
+        // und lassen sich hier bewusst nicht ändern.
         'grace_days'    => 7,                                 // so lange gilt der letzte bestätigte Stand ohne Kontakt zum Lizenzserver
         'refresh_seconds' => 3600,                            // Cron prüft Lizenzen frühestens nach dieser Zeit erneut
         'keyless_features' => 'all',                          // Funktionen für Bestandskonten ohne Schlüssel: 'all' oder Liste, z. B. ['passkeys']

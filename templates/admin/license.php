@@ -6,7 +6,7 @@
     <dt class="text-slate-500">Lizenzserver</dt><dd class="font-mono"><?= $e($apiUrl) ?></dd>
     <dt class="text-slate-500">Produkt</dt><dd class="font-mono"><?= $e($product) ?></dd>
     <dt class="text-slate-500">Öffentlicher Schlüssel</dt>
-    <dd><?= $configured && $fingerprint !== '' ? '<span class="text-emerald-500"><i class="bx bx-check-circle"></i> hinterlegt</span> <span class="font-mono text-xs text-slate-500">' . $e($fingerprint) . '</span>' : '<span class="text-red-500"><i class="bx bx-error-circle"></i> fehlt oder ungültig – ohne gültigen Schlüssel sind keine Registrierungen möglich (license.public_key in config/config.php prüfen)</span>' ?></dd>
+    <dd><?= $configured && $fingerprint !== '' ? '<span class="text-emerald-500"><i class="bx bx-check-circle"></i> hinterlegt</span> <span class="font-mono text-xs text-slate-500">' . $e($fingerprint) . '</span>' : '<span class="text-red-500"><i class="bx bx-error-circle"></i> fehlt oder ungültig – ohne gültigen Schlüssel sind keine Registrierungen möglich</span>' ?></dd>
     <dt class="text-slate-500">Konten ohne Schlüssel</dt><dd><?= (int) $keyless ?> (Bestandsschutz, belegen keinen Platz)</dd>
     <?php if ($releases > 0): ?><dt class="text-slate-500">Offene Freigaben</dt><dd><?= (int) $releases ?> (werden per Cron wiederholt)</dd><?php endif; ?>
   </dl>

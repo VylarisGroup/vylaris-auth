@@ -37,7 +37,7 @@ final class UpdateController extends BaseController
         return $this->render('admin/update', [
             'configured' => $u->configured(), 'current' => $u->currentVersion(), 'latest' => $u->latest(), 'available' => $u->updateAvailable(),
             'pending' => $u->pending(), 'locked' => $u->locked(), 'last' => $u->last(), 'backups' => $u->backups(),
-            'repo' => (string) $this->app->config->get('update.repo', ''), 'private' => (string) $this->app->config->get('update.token', '') !== '',
+            'repo' => trim((string) $this->app->config->get('update.repo', \Vylaris\Update\GithubSource::DEFAULT_REPO)), 'private' => (string) $this->app->config->get('update.token', '') !== '',
             'zip' => class_exists(\ZipArchive::class),
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);

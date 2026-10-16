@@ -58,6 +58,7 @@ final class App
         private string $root,
         ?HttpClient $http = null,
         ?UpdateSource $updateSource = null,
+        ?\Vylaris\License\LicenseClient $licenseClient = null,
     ) {
         $this->brand = new BrandingService($db, $config, $root);
         // Laufzeit-Overrides aus dem Branding: Absendername und Passkey-Anzeigename folgen dem Markennamen.
@@ -74,7 +75,7 @@ final class App
         $this->mailer = new Mailer($db, $transport, $this->brand);
         $this->audit = new AuditLogger($db);
         $http ??= new CurlHttpClient();
-        $this->license = new LicenseService($db, $config, $http, $this->limiter, $this->audit);
+        $this->license = new LicenseService($db, $config, $http, $this->limiter, $this->audit, $licenseClient);
         $this->sessions = new SessionService($db);
         $this->auth = new AuthService($db, $config, $this->users, $this->passwords, $this->tokens, $this->limiter, $this->mailer, $this->audit, $this->sessions, $this->license);
         $this->policy = new Policy($this->users);

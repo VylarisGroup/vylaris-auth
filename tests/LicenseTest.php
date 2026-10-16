@@ -35,7 +35,7 @@ final class LicenseTest extends TestCase
                 return str_starts_with($url, 'https://licence.test') ? $this->srv->request($method, $url, $headers, $body) : $this->idp->request($method, $url, $headers, $body);
             }
         };
-        $this->ctx = Factory::app(['license' => ['required' => true, 'api_url' => self::URL, 'public_key' => $this->srv->publicKeyPem, 'grace_days' => 7]], $http);
+        $this->ctx = Factory::app(['license' => ['required' => true, 'grace_days' => 7]], $http, null, new LicenseClient($http, self::URL, $this->srv->publicKeyPem, 'vylarisauth'));
     }
 
     private function register(string $email, string $key, ?TestBrowser $b = null): array
@@ -199,9 +199,12 @@ final class LicenseTest extends TestCase
         $this->assertSame('BAD_SIGNATURE', $e->licenseCode);
     }
 
-    public function testBuiltInPublicKeyIsUsedWhenNotConfigured(): void
+    public function testServerAndPublicKeyAreFixedAndNotConfigurable(): void
     {
-        $ctx = Factory::app(['license' => ['required' => true, 'api_url' => self::URL, 'public_key' => '']], $this->srv);
+        // Selbst mit Werten in der Config gelten Server und Schlüssel der Software.
+        $ctx = Factory::app(['license' => ['required' => true, 'api_url' => 'https://evil.example', 'public_key' => $this->srv->publicKeyPem, 'product' => 'x']], $this->srv);
+        $this->assertSame('https://licence.vylaris.ch', $ctx->app->license->client()->baseUrl());
+        $this->assertSame('vylarisauth', $ctx->app->license->client()->product());
         $this->assertSame((new LicenseClient($this->srv, self::URL, LicenseService::DEFAULT_PUBLIC_KEY, 'x'))->fingerprint(), $ctx->app->license->client()->fingerprint());
         $this->assertTrue($ctx->app->license->client()->configured());
         // Der Testserver signiert mit einem anderen Schlüssel -> Antworten werden abgelehnt.

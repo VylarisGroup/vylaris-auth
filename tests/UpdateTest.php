@@ -390,7 +390,7 @@ final class UpdateTest extends TestCase
         $ctx = $this->webCtx();
         $b = $this->login($ctx, 'super@example.org');
         $page = $b->get('/admin/update')->body;
-        $this->assertStringContains('1.0.0', $page);
+        $this->assertStringContains('1.5.0', $page);
         $this->assertStringNotContains('Auf Version 9.9.9', $page, 'vor der Prüfung kein Update-Knopf');
         $r = $b->post('/admin/update/check');
         $this->assertSame(302, $r->status);
@@ -421,7 +421,7 @@ final class UpdateTest extends TestCase
         $b = $this->login($ctx, 'super@example.org');
         $this->assertSame(403, $b->post('/admin/update/install', ['version' => '9.9.9'], false)->status, 'ohne CSRF-Token abgelehnt');
         $this->assertSame(0, $ctx->src->downloads);
-        $this->assertSame('1.0.0', trim((string) file_get_contents(dirname(__DIR__) . '/VERSION')));
+        $this->assertSame('1.5.0', trim((string) file_get_contents(dirname(__DIR__) . '/VERSION')));
     }
 
     public function testMaintenanceModeBlocksEverythingExceptUpdateScreens(): void

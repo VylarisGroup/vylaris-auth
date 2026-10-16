@@ -81,14 +81,6 @@ final class Installer
         if ($pw !== (string) ($in['admin_password2'] ?? '')) {
             $errors[] = 'Die Passwörter stimmen nicht überein.';
         }
-        $licenseKey = trim((string) ($in['license_public_key'] ?? '')) ?: trim(\Vylaris\License\LicenseService::DEFAULT_PUBLIC_KEY);
-        $licenseUrl = rtrim(trim((string) ($in['license_api_url'] ?? '')), '/') ?: 'https://licence.vylaris.ch';
-        if (!preg_match('#^https://[^/\s]+$#', $licenseUrl)) {
-            $errors[] = 'Die Adresse des Lizenzservers muss mit https:// beginnen und darf keinen Pfad enthalten.';
-        }
-        if ($licenseKey !== '' && (new \Vylaris\License\LicenseClient(new \Vylaris\Social\CurlHttpClient(), $licenseUrl, $licenseKey, 'vylarisauth'))->fingerprint() === '') {
-            $errors[] = 'Der öffentliche Lizenz-Schlüssel ist ungültig (erwartet: Ed25519-Schlüssel im PEM-Format).';
-        }
         $repo = trim((string) ($in['update_repo'] ?? ''));
         $repo = preg_replace('#^(https?://)?(www\.)?github\.com/#i', '', $repo) ?? $repo;
         $repo = preg_replace('#(\.git)?/?$#', '', $repo) ?? $repo;
@@ -132,7 +124,7 @@ final class Installer
                 'private_key_dir' => $this->root . '/var/keys', 'require_nonce' => true,
                 'access_token_ttl' => 600, 'id_token_ttl' => 600, 'refresh_token_ttl' => 2592000, 'auth_code_ttl' => 60,
             ],
-            'license' => ['required' => true, 'api_url' => $licenseUrl, 'product' => 'vylarisauth', 'public_key' => $licenseKey, 'grace_days' => 7, 'refresh_seconds' => 3600, 'keyless_features' => 'all'],
+            'license' => ['required' => true, 'grace_days' => 7, 'refresh_seconds' => 3600, 'keyless_features' => 'all'],
             'update' => ['repo' => $repo, 'token' => $token, 'check_hours' => 12],
             'webauthn' => ['rp_name' => $appName, 'rp_id' => (string) $host],
             'paths' => ['log_dir' => $this->root . '/var/log'],

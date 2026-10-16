@@ -91,9 +91,6 @@ $body .= '<form method="post" autocomplete="off"><input type="hidden" name="csrf
     . '<h2>E-Mail</h2><p style="font-size:.85rem">SMTP-Host leer lassen, um den lokalen Mailversand des Hosters (PHP mail()) zu nutzen.</p>' . $f('mail_host', 'SMTP-Host (empfohlen)') . $f('mail_port', 'Port', 'text', '587')
     . '<label>Verschlüsselung<select name="mail_encryption"><option value="tls">STARTTLS (587)</option><option value="ssl">SSL/TLS (465)</option><option value="none">keine</option></select></label>'
     . $f('mail_user', 'Benutzer') . $f('mail_password', 'Passwort', 'password') . $f('mail_from', 'Absenderadresse', 'text', 'no-reply@example.org')
-    . '<h2>Lizenz</h2><p style="font-size:.85rem">Der öffentliche Schlüssel des Lizenzservers ist vorbelegt; nur ändern, wenn Sie einen anderen Lizenzserver verwenden (später: license.public_key in config/config.php).</p>'
-    . $f('license_api_url', 'Adresse des Lizenzservers', 'text', 'https://licence.vylaris.ch')
-    . '<label>Öffentlicher Schlüssel (PEM)<textarea name="license_public_key" rows="5" style="width:100%;box-sizing:border-box;font-family:monospace">' . $e($in['license_public_key'] ?? trim(\Vylaris\License\LicenseService::DEFAULT_PUBLIC_KEY)) . '</textarea></label>'
     . '<h2>Automatische Updates (GitHub)</h2><p style="font-size:.85rem">Optional. Neue Versionen werden aus den Releases dieses Repositorys geholt; installiert wird per Klick im Admin-Bereich.</p>'
     . $f('update_repo', 'GitHub-Repository (besitzer/name, leer = keine Updates)', 'text', \Vylaris\Update\GithubSource::DEFAULT_REPO)
     . '<label><input type="checkbox" name="update_private" value="1" style="width:auto"' . (($in['update_private'] ?? '') === '1' ? ' checked' : '') . '> Repository ist privat (Token nötig)</label>'
