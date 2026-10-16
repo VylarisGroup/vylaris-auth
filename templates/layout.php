@@ -9,10 +9,10 @@
   <title><?= $e($title ?? $appName) ?> · <?= $e($appName) ?></title>
   <meta name="theme-color" content="<?= $e($brand['primaryHex']) ?>">
   <link rel="icon" href="<?= $e($brand['faviconUrl']) ?>">
-  <link rel="stylesheet" href="/assets/app.css">
-  <link rel="stylesheet" href="/assets/boxicons/css/boxicons.min.css">
+  <link rel="stylesheet" href="/assets/app.css?v=<?= $e($assetVer ?? "") ?>">
+  <link rel="stylesheet" href="/assets/boxicons/css/boxicons.min.css?v=<?= $e($assetVer ?? "") ?>">
   <link rel="stylesheet" href="<?= $e($brand['themeCssUrl']) ?>">
-  <script src="/assets/ui.js"></script>
+  <script src="/assets/ui.js?v=<?= $e($assetVer ?? "") ?>"></script>
 </head>
 <body class="flex min-h-full flex-col">
   <div class="app-bg" aria-hidden="true"></div>

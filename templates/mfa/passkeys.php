@@ -25,4 +25,4 @@
     <div id="passkey-codes" class="hidden"></div>
   </div>
 </section>
-<script src="/assets/passkey.js" defer></script>
+<script src="/assets/passkey.js?v=<?= $e($assetVer ?? "") ?>" defer></script>

@@ -3,6 +3,10 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.8.2 – 2026-10-16
+- Behoben: Icons und Layout erschienen nach einem Update kaputt, weil Browser alte CSS-/JS-Dateien bis zu 24 Stunden zwischenspeicherten. Statische Dateien tragen jetzt eine Versionskennung und laden nach jedem Update neu.
+- Verbessert: Fehlgeschlagene Social-Logins (z. B. Discord) protokollieren jetzt den genauen Grund (Netzwerkfehler, Antwort des Anbieters). Sichtbar unter Admin → Social Login → Anbieter → „Letzte fehlgeschlagene Anmeldungen“.
+
 ## 1.8.1 – 2026-10-17
 - Discord-Login: Anfragen an Discord senden jetzt den von Discord verlangten User-Agent (`DiscordBot (URL, 1.0)`); generische Kennungen werden von Discord teils abgewiesen. Außerdem wird ein fehlgeschlagener Profilabruf jetzt mit dem HTTP-Status im Audit-Log vermerkt.
 - Neu: Auf der Detailseite eines Social-Anbieters (Admin → Social Login) stehen die letzten fehlgeschlagenen Anmeldungen mit Fehlercode und einer verständlichen Erklärung, so lässt sich die Ursache ohne Log-Suche finden.

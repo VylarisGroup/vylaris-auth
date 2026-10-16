@@ -32,4 +32,4 @@
     <a class="link" href="/register">Konto erstellen</a>
   </div>
 </section>
-<script src="/assets/passkey.js" defer></script>
+<script src="/assets/passkey.js?v=<?= $e($assetVer ?? "") ?>" defer></script>

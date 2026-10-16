@@ -172,6 +172,7 @@ final class App
         $this->audit->setContext($request->ip(), $request->userAgent());
         $this->view->share('csrf', Csrf::token($this->session));
         $this->view->share('navPath', $request->path);
+        $this->view->share('assetVer', $this->assetVersion());
         $user = $this->auth->currentUser($this->session);
         $this->view->share('currentUser', $user);
         $this->view->share('isAdmin', $user !== null && $this->policy->isAdmin((int) $user['id']));
@@ -262,5 +263,14 @@ final class App
             @error_log('VylarisAuth ' . trim($line));
         }
         return $id;
+    }
+
+    /** Versions-Suffix für statische Dateien, damit Browser nach einem Update nie veraltete CSS/JS/Icons laden. */
+    private function assetVersion(): string
+    {
+        $v = @file_get_contents($this->root . '/VERSION');
+        $v = $v === false ? '' : preg_replace('/[^0-9A-Za-z.\-]/', '', trim($v));
+        $m = @filemtime($this->root . '/public/assets/app.css');
+        return rawurlencode(($v !== '' ? $v : '0') . ($m ? '-' . $m : ''));
     }
 }

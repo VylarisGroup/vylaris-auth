@@ -443,7 +443,11 @@ final class SocialService
         if (!$res->ok() || $data === null || isset($data['error'])) {
             // Fehlercode des Anbieters (kurz, ohne Secrets) ins Audit-Log.
             $err = is_string($data['error'] ?? null) && preg_match('/^[a-z_]{1,40}$/', $data['error']) ? $data['error'] : 'http_' . $res->status;
-            throw new SocialException('token_exchange_failed:' . $err);
+            $desc = is_string($data['error_description'] ?? null) ? trim((string) preg_replace('/[^A-Za-z0-9 .,:_()\/-]/', '', mb_substr($data['error_description'], 0, 80))) : '';
+            if ($data === null) {
+                $desc = 'Antwort keine JSON (' . trim((string) preg_replace('/\s+/', ' ', preg_replace('/[^A-Za-z0-9 <>.:_\/-]/', '', mb_substr(strip_tags($res->body), 0, 60)))) . ')';
+            }
+            throw new SocialException('token_exchange_failed:' . $err . ($desc !== '' ? ' ' . $desc : ''));
         }
         return $data;
     }
@@ -552,8 +556,9 @@ final class SocialService
     {
         try {
             return $this->http->request($method, $url, $headers, $body);
-        } catch (\RuntimeException) {
-            throw new SocialException('http_failed');
+        } catch (\RuntimeException $e) {
+            $d = trim((string) preg_replace('/[^A-Za-z0-9 .:_()\/-]/', '', mb_substr($e->getMessage(), 0, 120)));
+            throw new SocialException('http_failed' . ($d !== '' ? ':' . $d : ''));
         }
     }
 

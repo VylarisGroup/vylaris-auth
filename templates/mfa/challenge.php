@@ -34,4 +34,4 @@
     <button class="link text-slate-500" type="submit">Abbrechen</button>
   </form>
 </section>
-<script src="/assets/passkey.js" defer></script>
+<script src="/assets/passkey.js?v=<?= $e($assetVer ?? "") ?>" defer></script>
