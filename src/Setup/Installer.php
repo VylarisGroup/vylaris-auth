@@ -81,7 +81,7 @@ final class Installer
         if ($pw !== (string) ($in['admin_password2'] ?? '')) {
             $errors[] = 'Die Passwörter stimmen nicht überein.';
         }
-        $repo = trim((string) ($in['update_repo'] ?? ''));
+        $repo = trim((string) ($in['update_repo'] ?? \Vylaris\Update\GithubSource::DEFAULT_REPO)); // Setup fragt das Repository nicht mehr ab; Änderung im Admin-Bereich
         $repo = preg_replace('#^(https?://)?(www\.)?github\.com/#i', '', $repo) ?? $repo;
         $repo = preg_replace('#(\.git)?/?$#', '', $repo) ?? $repo;
         $token = trim((string) ($in['update_token'] ?? ''));

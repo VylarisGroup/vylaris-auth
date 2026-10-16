@@ -3,6 +3,10 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.8.4 – 2026-10-16
+- Neu: Die Ersteinrichtung (`setup.php`) ist jetzt ein mehrstufiger Assistent mit Fortschrittsanzeige (Zugang, Dienst, Datenbank, E-Mail, Administrator), Prüfung je Schritt und Dunkelmodus. Ohne JavaScript bleibt es ein normales Formular.
+- Geändert: Die Repository-Abfrage für Updates entfällt im Setup; es wird automatisch das Standard-Repository verwendet.
+
 ## 1.8.3 – 2026-10-16
 - Behoben: Fehler „TOO_MANY_REDIRECTS“ (Endlosschleife) bei frischen Installationen hinter Plesk-nginx, Cloudflare oder anderen Proxys. Die `.htaccess` erzwingt HTTPS nicht mehr selbst; HSTS und Secure-Cookies richten sich nach `app.base_url`. Bei bestehenden Installationen bitte die Zeilen „HTTPS erzwingen“ in `public/.htaccess` löschen (siehe docs/PLESK.md).
 

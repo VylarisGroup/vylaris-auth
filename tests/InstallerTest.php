@@ -113,13 +113,21 @@ final class InstallerTest extends TestCase
         $this->assertSame('', $cfg['update']['token']);
     }
 
-    public function testNoRepoMeansUpdatesOff(): void
+    public function testDefaultRepoWhenSetupDoesNotAskForIt(): void
     {
         $i = new Installer($this->root, true);
         file_put_contents($this->root . '/config/setup.token', bin2hex(random_bytes(16)));
         $this->assertSame([], $i->install($this->input()));
         $cfg = require $this->root . '/config/config.php';
-        $this->assertSame('', $cfg['update']['repo']);
+        $this->assertSame(\Vylaris\Update\GithubSource::DEFAULT_REPO, $cfg['update']['repo']);
+    }
+
+    public function testSetupPageIsMultiStepWithoutRepositoryQuestion(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__) . '/public/setup.php');
+        $this->assertTrue(substr_count($src, 'data-step') >= 5);
+        $this->assertTrue(!str_contains($src, 'update_repo') && !str_contains($src, 'update_token'));
+        $this->assertTrue(is_file(dirname(__DIR__) . '/public/assets/setup.js'));
     }
 
     public function testSecondInstallIsRefused(): void
