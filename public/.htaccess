@@ -1,10 +1,11 @@
-# VylarisAuth – Apache-Konfiguration (Plesk/Shared Hosting)
+# VylarisAuth – Apache-Konfiguration (Plesk, KeyHelp und andere Shared-Hosting-Panels; Apache 2.4)
 Options -Indexes -MultiViews
+DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    # Bewusst KEINE HTTPS-Umleitung hier: Hinter Plesk-nginx/Cloudflare/Proxy meldet Apache oft "http" und das
-    # führt zu TOO_MANY_REDIRECTS. HTTP→HTTPS bitte in Plesk ("Von HTTP zu HTTPS umleiten") bzw. im Proxy einschalten.
+    # Bewusst KEINE HTTPS-Umleitung hier: Hinter nginx-Proxy (Plesk, KeyHelp) oder Cloudflare meldet Apache oft "http"
+    # und das führt zu TOO_MANY_REDIRECTS. HTTP→HTTPS bitte im Panel (Plesk/KeyHelp: "auf HTTPS umleiten") bzw. im Proxy einschalten.
     # Die App setzt HSTS und Secure-Cookies anhand von app.base_url (https://…).
     # Discovery auch dann bedienen, wenn ein echtes Verzeichnis .well-known existiert (z. B. von Plesk/Let's Encrypt angelegt)
     RewriteRule ^\.well-known/openid-configuration$ index.php [L]
