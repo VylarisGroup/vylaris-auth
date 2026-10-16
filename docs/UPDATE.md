@@ -64,3 +64,7 @@ Ein Update ersetzt Programmcode auf Ihrem Server. Der Updater vertraut daher dem
 * Die Anbindung an die GitHub-API (`GithubSource`) ist nicht gegen das echte GitHub getestet (in der Entwicklungsumgebung gesperrt); Ablauf, Archivprüfung, Austausch, Wartungsmodus und Rückstellung sind getestet. Probieren Sie es nach dem Einrichten einmal mit einem Test-Release (z. B. Version `0.0.1` → `0.0.2`) auf einer Staging-Installation.
 * Änderungen an `public/.htaccess`/`.htaccess` im Release überschreiben Ihre lokalen Anpassungen (die Sicherung enthält die alte Datei).
 * Läuft die Installation über Windows-Hosting oder ein Dateisystem ohne Schreibrecht des Webserver-Benutzers auf `src/`, `templates/` usw., scheitert sie vor jeder Änderung mit einer Fehlermeldung.
+
+## Änderungsprotokoll (CHANGELOG.md)
+
+Jedes Release bringt eine `CHANGELOG.md` im Projektstamm mit (Format: `## 1.6.0 – 2026-10-16`, darunter Stichpunkte mit `- `). Nach einem Update sieht jeder Administrator beim ersten Aufruf des Admin-Bereichs die Neuerungen aller Versionen seit seinem letzten Stand und bestätigt sie mit „Verstanden“; ein Administrator, der noch nie etwas bestätigt hat, sieht nur den Eintrag der installierten Version. Pro Release also **vor dem Tag** einen Abschnitt oben in `CHANGELOG.md` ergänzen (Migration `005_changelog` legt die Merk-Tabelle an).

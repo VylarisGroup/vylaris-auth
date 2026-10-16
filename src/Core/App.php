@@ -39,6 +39,7 @@ final class App
     public readonly PrivacyService $privacy;
     public readonly LicenseService $license;
     public readonly Updater $updater;
+    public readonly \Vylaris\Update\Changelog $changelog;
     public readonly View $view;
     public readonly Router $router;
 
@@ -93,6 +94,7 @@ final class App
         if ($updateSource === null && $repo !== '' && GithubSource::validRepo($repo)) {
             $updateSource = new GithubSource($repo, (string) $config->get('update.token', ''));
         }
+        $this->changelog = new \Vylaris\Update\Changelog($root, $db);
         $this->updater = new Updater($root, $updateSource, (int) $config->get('update.check_hours', 12), static fn (): array => (new \Vylaris\Core\Migrator($db, $root . '/migrations'))->migrate());
         $this->view = new View($root . '/templates', ['appName' => $this->brand->get('name')]);
         $this->router = new Router();

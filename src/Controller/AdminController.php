@@ -12,6 +12,7 @@ final class AdminController extends BaseController
     public function routes(Router $r): void
     {
         $r->get('/admin', fn (Request $q) => $this->guard($q, fn ($u) => $this->dashboard($u)));
+        $r->post('/admin/changelog/seen', fn (Request $q) => $this->guard($q, fn ($u) => $this->changelogSeen($u)));
         $r->get('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->users($q, $u)));
         $r->post('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->createUser($q, $u)));
         $r->get('/admin/users/{id}', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->userDetail((int) $p['id'], $u)));
@@ -49,7 +50,13 @@ final class AdminController extends BaseController
     private function dashboard(array $user): Response
     {
         $upd = $this->app->policy->isSuperAdmin((int) $user['id']) ? $this->app->updater->updateAvailable() : null;
-        return $this->render('admin/dashboard', ['updateAvailable' => $upd, 'version' => $this->app->updater->currentVersion(), 'stats' => $this->app->admin->stats(), 'events' => $this->app->audit->recent(10), 'flash' => $this->app->session()->flash('ok')]);
+        return $this->render('admin/dashboard', ['updateAvailable' => $upd, 'version' => $this->app->updater->currentVersion(), 'changelog' => $this->app->changelog->unseen((int) $user['id'], $this->app->updater->currentVersion()), 'stats' => $this->app->admin->stats(), 'events' => $this->app->audit->recent(10), 'flash' => $this->app->session()->flash('ok')]);
+    }
+
+    private function changelogSeen(array $user): Response
+    {
+        $this->app->changelog->markSeen((int) $user['id'], $this->app->updater->currentVersion());
+        return $this->redirect('/admin');
     }
 
     private function users(Request $q, array $user): Response
