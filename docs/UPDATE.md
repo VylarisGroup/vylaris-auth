@@ -35,7 +35,7 @@ Neue Datenbankänderungen kommen als neue Migration in `migrations/NNN_name.php`
 6. Weiterleitung auf `/admin/update/finish`: der **neue Code** führt die Migrationen aus und prüft sich. Danach Wartungsmodus aus.
 7. Schlägt Schritt 5 oder 6 fehl (auch bei PHP-Timeout), werden die Dateien **automatisch zurückgestellt**.
 
-**Ausgetauscht** werden: `src/ templates/ migrations/ bin/ docs/ examples/ scripts/ assets-src/ tests/ public/assets/` (veraltete Dateien darin werden entfernt, sofern der Ordner im Release vorkommt) sowie alle weiteren Dateien des Releases einzeln (`public/index.php`, `public/.htaccess`, `.htaccess`, `README.md`, `VERSION` …). **Nie angefasst:** `config/config.php`, `config/setup.token` und alles unter `var/` (Schlüssel, Logs, Branding, Sicherungen). Eigene Dateien, die nicht im Release stehen, bleiben liegen.
+**Ausgetauscht** werden: `src/ templates/ migrations/ bin/ docs/ examples/ scripts/ assets-src/ tests/ public/assets/` (veraltete Dateien darin werden entfernt, sofern der Ordner im Release vorkommt) sowie alle weiteren Dateien des Releases einzeln (`public/index.php`, `public/.htaccess`, `.htaccess`, `README.md`, `VERSION` …). **Nie angefasst:** `config/config.php`, `config/setup.token`, die `.htaccess` im Projektstamm (hosting-spezifisch) und alles unter `var/` (Schlüssel, Logs, Branding, Sicherungen). Eigene Dateien, die nicht im Release stehen, bleiben liegen.
 
 ## Notfall und Rückstellen
 
