@@ -21,6 +21,16 @@
     </div>
     <div><button class="btn btn-primary" type="submit">Speichern</button></div>
   </form>
+  <?php if (!empty($failures)): ?>
+  <div class="mt-6 border-t border-slate-200 pt-4 dark:border-slate-800">
+    <h2 class="font-semibold"><i class="bx bx-error-circle"></i> Letzte fehlgeschlagene Anmeldungen</h2>
+    <ul class="mt-2 divide-y divide-slate-200 text-sm dark:divide-slate-800">
+      <?php foreach ($failures as $f): ?>
+      <li class="py-2"><span class="text-slate-500"><?= $e($f['at']) ?></span> · <code><?= $e($f['reason']) ?></code><br><span class="text-slate-600 dark:text-slate-300"><?= $e($f['hint']) ?></span></li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+  <?php endif; ?>
   <form method="post" action="/admin/social/<?= $e($p['provider_key']) ?>/action" class="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
     <input type="hidden" name="action" value="delete">

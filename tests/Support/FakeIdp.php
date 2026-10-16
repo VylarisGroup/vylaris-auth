@@ -16,6 +16,8 @@ final class FakeIdp implements HttpClient
     public const SECRET = 'geheimes-client-secret';
     public const KEY_OIDC = 'https://idp.example.org';
 
+    /** @var array<int,array{0:string,1:array}> URL und Header jeder Anfrage */
+    public array $headerLog = [];
     /** @var array<string,array> */
     private array $codes = [];
     /** @var array<string,array> */
@@ -77,6 +79,7 @@ final class FakeIdp implements HttpClient
     public function request(string $method, string $url, array $headers = [], ?string $body = null): HttpResponse
     {
         $this->log[] = $method . ' ' . $url;
+        $this->headerLog[] = [$url, $headers];
         $p = parse_url($url);
         $host = $p['host'];
         $path = $p['path'] ?? '/';

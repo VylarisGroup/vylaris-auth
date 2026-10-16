@@ -211,9 +211,43 @@ final class SocialController extends BaseController
         unset($p['client_secret_enc']);
         return $this->render('admin/social_edit', [
             'p' => $p, 'types' => SocialService::TYPES, 'redirectUri' => $this->app->social->redirectUri($key),
-            'identities' => $this->app->social->identityCount($key),
+            'identities' => $this->app->social->identityCount($key), 'failures' => $this->recentFailures($key),
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);
+    }
+
+    /** Letzte fehlgeschlagene Anmeldungen über diesen Anbieter (aus dem Audit-Log) mit verständlicher Erklärung. */
+    private function recentFailures(string $key): array
+    {
+        $out = [];
+        foreach ($this->app->audit->recent(200, 'social.failed') as $row) {
+            $d = json_decode((string) $row['details'], true);
+            if (!is_array($d) || ($d['provider'] ?? '') !== $key) {
+                continue;
+            }
+            $reason = (string) ($d['reason'] ?? '');
+            $out[] = ['at' => $row['created_at'], 'mode' => (string) ($d['mode'] ?? ''), 'reason' => $reason, 'hint' => self::explain($reason)];
+            if (count($out) >= 5) {
+                break;
+            }
+        }
+        return $out;
+    }
+
+    private static function explain(string $r): string
+    {
+        return match (true) {
+            str_contains($r, 'invalid_client') => 'Client-ID oder Client-Secret stimmen nicht – im Entwicklerportal des Anbieters prüfen (Secret neu erzeugen und hier eintragen).',
+            str_contains($r, 'invalid_grant') => 'Der Code wurde abgelehnt: Die Redirect-URI beim Anbieter muss exakt der oben angezeigten entsprechen (https, kein Slash am Ende).',
+            str_contains($r, 'redirect_uri') => 'Die Redirect-URI beim Anbieter muss exakt der oben angezeigten entsprechen.',
+            (bool) preg_match('/http_(403|1020)$/', $r) => 'Der Anbieter blockiert die Anfrage dieses Servers (z. B. Cloudflare-Schutz gegen Hosting-Adressen). Anbieter-Support oder anderen Ausgangs-IP-Bereich prüfen.',
+            (bool) preg_match('/http_429$/', $r) => 'Der Anbieter begrenzt Anfragen von diesem Server (zu viele Versuche). Etwas warten und erneut versuchen.',
+            str_contains($r, 'http_failed') => 'Der Anbieter war vom Server aus nicht erreichbar (Firewall, DNS oder Zeitüberschreitung).',
+            in_array($r, ['state_mismatch', 'flow_missing_or_expired'], true) => 'Die Sitzung ging beim Wechsel zum Anbieter verloren (Cookies blockiert, anderer Browser oder zu langsam, Domain mit/ohne www).',
+            str_starts_with($r, 'provider_error:') => 'Der Anbieter hat die Anmeldung abgelehnt oder der Nutzer hat abgebrochen.',
+            str_starts_with($r, 'discord_user') => 'Discord hat das Profil nicht geliefert. Scopes „identify“ und „email“ müssen freigegeben sein.',
+            default => 'Technischer Fehler – Code an den Support weitergeben.',
+        };
     }
 
     private function adminSave(Request $q, array $actor, ?string $key): Response

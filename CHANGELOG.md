@@ -3,6 +3,10 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.8.1 – 2026-10-17
+- Discord-Login: Anfragen an Discord senden jetzt den von Discord verlangten User-Agent (`DiscordBot (URL, 1.0)`); generische Kennungen werden von Discord teils abgewiesen. Außerdem wird ein fehlgeschlagener Profilabruf jetzt mit dem HTTP-Status im Audit-Log vermerkt.
+- Neu: Auf der Detailseite eines Social-Anbieters (Admin → Social Login) stehen die letzten fehlgeschlagenen Anmeldungen mit Fehlercode und einer verständlichen Erklärung, so lässt sich die Ursache ohne Log-Suche finden.
+
 ## 1.8.0 – 2026-10-16
 - Lizenzschlüssel müssen nur noch einmal eingegeben werden: Unter Admin → Lizenz hinterlegte Schlüssel (oder der Schlüssel, den ein Administrator beim Anlegen eines Kontos eingibt) werden für jedes neue Konto automatisch verwendet, bis alle Plätze belegt sind; danach wird der nächste hinterlegte Schlüssel genommen. Das Schlüsselfeld in der Registrierung entfällt, solange ein Schlüssel hinterlegt ist.
 - Behoben: Der Hell/Dunkel-Umschalter war in manchen Designs kaum zu erkennen. Er hat jetzt Rahmen und Hintergrund und auf dem Handy eine Beschriftung.

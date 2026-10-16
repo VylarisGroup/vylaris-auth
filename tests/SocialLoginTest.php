@@ -406,6 +406,36 @@ final class SocialLoginTest extends TestCase
         $this->assertNull($this->user('disc2@example.org'));
     }
 
+    public function testDiscordRequestsCarryDiscordCompliantUserAgent(): void
+    {
+        $ok = ['id' => '9101', 'username' => 'ua', 'email' => 'ua@example.org', 'verified' => true];
+        $this->flow(new TestBrowser($this->ctx->app), 'discord', $ok);
+        $seen = 0;
+        foreach ($this->idp->headerLog as [$url, $headers]) {
+            if (str_starts_with($url, 'https://discord.com/')) {
+                $seen++;
+                $ua = array_values(array_filter($headers, static fn (string $h) => stripos($h, 'user-agent:') === 0));
+                $this->assertSame(['User-Agent: DiscordBot (https://auth.test, 1.0)'], $ua, $url);
+            }
+        }
+        $this->assertSame(2, $seen, 'Token-Endpunkt und Profil');
+    }
+
+    public function testAdminSeesRecentProviderFailuresWithExplanation(): void
+    {
+        $a = $this->ctx->app;
+        $a->audit->log('social.failed', null, ['provider' => 'discord', 'reason' => 'token_exchange_failed:http_403', 'mode' => 'login']);
+        $a->audit->log('social.failed', null, ['provider' => 'github', 'reason' => 'state_mismatch', 'mode' => 'login']);
+        $b = new TestBrowser($a);
+        $b->post('/login', ['email' => 'admin@example.org', 'password' => self::PW]);
+        $page = $b->get('/admin/social/discord')->body;
+        $this->assertStringContains('Letzte fehlgeschlagene Anmeldungen', $page);
+        $this->assertStringContains('token_exchange_failed:http_403', $page);
+        $this->assertStringContains('blockiert die Anfrage', $page);
+        $this->assertStringNotContains('state_mismatch', $page, 'nur Fehler dieses Anbieters');
+        $this->assertStringNotContains('Letzte fehlgeschlagene Anmeldungen', $b->get('/admin/social/google')->body);
+    }
+
     // ------------------------------------------------------------ Microsoft
 
     public function testMicrosoftNeverCreatesAccountsFromUnverifiableEmail(): void

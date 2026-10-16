@@ -16,7 +16,15 @@ final class CurlHttpClient implements HttpClient
         if (!str_starts_with($url, 'https://')) {
             throw new \RuntimeException('Nur HTTPS-URLs sind erlaubt.');
         }
-        $headers[] = 'User-Agent: VylarisAuth';
+        $hasUa = false;
+        foreach ($headers as $h) {
+            if (stripos($h, 'user-agent:') === 0) {
+                $hasUa = true;
+            }
+        }
+        if (!$hasUa) {
+            $headers[] = 'User-Agent: VylarisAuth'; // Aufrufer können einen eigenen Wert setzen (z. B. Discord)
+        }
         $host = strtolower(trim((string) parse_url($url, PHP_URL_HOST), '[]'));
         $ips = $this->publicAddresses($host);
         return function_exists('curl_init') ? $this->viaCurl($method, $url, $headers, $body, $host, $ips) : $this->viaStream($method, $url, $headers, $body);

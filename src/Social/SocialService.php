@@ -429,6 +429,9 @@ final class SocialService
             'redirect_uri' => $this->redirectUri($p['provider_key']), 'code_verifier' => $verifier,
         ];
         $headers = ['Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'];
+        if ($p['type'] === 'discord') {
+            $headers[] = $this->discordUserAgent();
+        }
         if (($ep['token_auth'] ?? 'post') === 'basic') {
             $headers[] = 'Authorization: Basic ' . base64_encode(rawurlencode($p['client_id']) . ':' . rawurlencode($secret));
         } else {
@@ -526,12 +529,23 @@ final class SocialService
         if ($token === '') {
             throw new SocialException('access_token_missing');
         }
-        $u = $this->call('GET', 'https://discord.com/api/users/@me', ['Authorization: Bearer ' . $token])->json();
+        $res = $this->call('GET', 'https://discord.com/api/users/@me', ['Authorization: Bearer ' . $token, 'Accept: application/json', $this->discordUserAgent()]);
+        $u = $res->json();
+        if (!$res->ok()) {
+            throw new SocialException('discord_user_http_' . (int) $res->status);
+        }
         if (!is_array($u) || !is_string($u['id'] ?? null) || !preg_match('/^\d{1,30}$/', $u['id'])) {
             throw new SocialException('discord_user_invalid');
         }
         $name = is_string($u['global_name'] ?? null) && $u['global_name'] !== '' ? $u['global_name'] : (is_string($u['username'] ?? null) ? $u['username'] : null);
         return new SocialIdentity($u['id'], is_string($u['email'] ?? null) ? $u['email'] : null, ($u['verified'] ?? false) === true, $name);
+    }
+
+    /** Discord verlangt einen eindeutigen User-Agent der Form "DiscordBot (URL, Version)"; generische Werte werden teils blockiert. */
+    private function discordUserAgent(): string
+    {
+        $base = preg_replace('/[^A-Za-z0-9:\/._-]/', '', $this->config->baseUrl()) ?: 'https://localhost';
+        return 'User-Agent: DiscordBot (' . $base . ', 1.0)';
     }
 
     private function call(string $method, string $url, array $headers = [], ?string $body = null): HttpResponse
