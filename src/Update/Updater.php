@@ -19,7 +19,8 @@ final class Updater
 {
     /** Verzeichnisse, die 1:1 dem Release entsprechen (veraltete Dateien darin werden entfernt). */
     public const MIRRORED = ['src', 'templates', 'migrations', 'bin', 'docs', 'examples', 'scripts', 'assets-src', 'tests', 'public/assets'];
-    public const PROTECTED = ['config/config.php', 'config/setup.token'];
+    /** .htaccess im Projektstamm ist hosting-spezifisch (Variante B) und wird nie überschrieben. */
+    public const PROTECTED = ['config/config.php', 'config/setup.token', '.htaccess'];
     private const MAX_ZIP = 52428800;       // 50 MiB
     private const MAX_UNPACKED = 209715200; // 200 MiB
     private const MAX_FILES = 6000;
@@ -543,13 +544,21 @@ final class Updater
     {
         $this->ensureDir(dirname($to));
         $tmp = $to . '.upd' . bin2hex(random_bytes(3));
+        $rel = substr($to, strlen($this->root) + 1);
         if (!@copy($from, $tmp)) {
-            throw new \RuntimeException('Datei kann nicht geschrieben werden: ' . substr($to, strlen($this->root) + 1));
+            // Verzeichnis nicht beschreibbar (häufig im Projektstamm auf Shared Hosting): vorhandene, beschreibbare Datei direkt überschreiben.
+            if (is_file($to) && is_writable($to) && @copy($from, $to)) {
+                return;
+            }
+            throw new \RuntimeException('Datei kann nicht geschrieben werden: ' . $rel . ' (Schreibrechte des Verzeichnisses bzw. der Datei für den PHP-Benutzer prüfen)');
         }
         @chmod($tmp, 0644);
         if (!@rename($tmp, $to)) {
             @unlink($tmp);
-            throw new \RuntimeException('Datei kann nicht ersetzt werden: ' . substr($to, strlen($this->root) + 1));
+            if (is_file($to) && is_writable($to) && @copy($from, $to)) {
+                return;
+            }
+            throw new \RuntimeException('Datei kann nicht ersetzt werden: ' . $rel);
         }
     }
 
