@@ -21,6 +21,7 @@ final class SocialController extends BaseController
         $r->post('/account/social/{provider}/unlink', fn (Request $q, array $p) => $this->unlink($q, $p['provider']));
         $r->get('/admin/social', fn (Request $q) => $this->adminGuard($q, fn () => $this->adminIndex()));
         $r->post('/admin/social', fn (Request $q) => $this->adminGuard($q, fn ($u) => $this->adminSave($q, $u, null)));
+        $r->get('/admin/social/new', fn (Request $q) => $this->adminGuard($q, fn ($u) => $this->denyFeature($u, 'social_login') ?? $this->render('admin/wizard_social', ['types' => SocialService::TYPES])));
         $r->get('/admin/social/{provider}', fn (Request $q, array $p) => $this->adminGuard($q, fn () => $this->adminEdit($p['provider'])));
         $r->post('/admin/social/{provider}', fn (Request $q, array $p) => $this->adminGuard($q, fn ($u) => $this->adminSave($q, $u, $p['provider'])));
         $r->post('/admin/social/{provider}/action', fn (Request $q, array $p) => $this->adminGuard($q, fn ($u) => $this->adminAction($q, $u, $p['provider'])));

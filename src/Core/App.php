@@ -171,6 +171,7 @@ final class App
         $this->session = $session ?? Session::bootstrap($this->config, $this->db, $request);
         $this->audit->setContext($request->ip(), $request->userAgent());
         $this->view->share('csrf', Csrf::token($this->session));
+        $this->view->share('navPath', $request->path);
         $user = $this->auth->currentUser($this->session);
         $this->view->share('currentUser', $user);
         $this->view->share('isAdmin', $user !== null && $this->policy->isAdmin((int) $user['id']));

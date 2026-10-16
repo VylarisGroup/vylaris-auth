@@ -52,7 +52,18 @@
       <?php endif; ?>
     </div>
   </header>
-  <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12"><?= $content ?></main>
+  <?php
+  $navPath = $navPath ?? '';
+  $section = '';
+  if (!empty($currentUser)) {
+      if (str_starts_with($navPath, '/admin') && !empty($isAdmin)) { $section = 'admin'; }
+      elseif (str_starts_with($navPath, '/account')) { $section = 'account'; }
+  }
+  ?>
+  <div class="<?= $section !== '' ? 'shell' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12' ?>">
+    <?php if ($section !== '') { require __DIR__ . '/partials/sidebar.php'; } ?>
+    <main class="min-w-0"><?= $content ?></main>
+  </div>
   <footer class="site-footer mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 pb-8 text-xs text-slate-500 sm:justify-start">
     <?php if ($brand['footer'] !== ''): ?><span><?= $e($brand['footer']) ?></span><?php endif; ?>
     <a href="/privacy">Datenschutz</a>

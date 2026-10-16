@@ -19,7 +19,7 @@
   </div>
 </section>
 <section class="card mt-6">
-  <h2 class="font-semibold">Konto anlegen</h2>
+  <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-semibold">Konto anlegen</h2><a class="btn btn-secondary btn-sm" href="/admin/users/new"><i class="bx bx-rocket"></i> Assistent starten</a></div>
   <p class="text-sm text-slate-500">Der Benutzer erhält eine E-Mail, um sein Passwort zu setzen.</p>
   <form method="post" action="/admin/users" class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">

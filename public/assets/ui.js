@@ -93,6 +93,121 @@
       window.addEventListener('pagehide', function () { set(false); });
     });
 
+    // Seitenleiste: ab Desktop-Breite immer offen, auf dem Handy zunächst eingeklappt (Knopf „Menü“)
+    var side = document.querySelector('details[data-sidebar]');
+    if (side && window.matchMedia) {
+      var desk = window.matchMedia('(min-width: 1024px)');
+      var fit = function () { side.open = desk.matches; };
+      fit();
+      if (desk.addEventListener) { desk.addEventListener('change', fit); }
+    }
+
+    // Seitenleiste: ausgeklappte Gruppen merken (nur Komfort; localStorage kann fehlen oder werfen)
+    document.querySelectorAll('details.side-group[data-side-key]').forEach(function (d) {
+      var key = 'side:' + d.getAttribute('data-side-key');
+      try {
+        if (!d.hasAttribute('data-active')) { d.open = window.localStorage.getItem(key) === '1'; }
+      } catch (err) { /* ignorieren */ }
+      d.addEventListener('toggle', function () {
+        try { window.localStorage.setItem(key, d.open ? '1' : '0'); } catch (err) { /* ignorieren */ }
+      });
+    });
+
+    // Assistent: Formular mit Schritten (fieldset.wiz-step) -> eine Seite pro Schritt, Prüfung je Schritt, Zusammenfassung.
+    // Ohne JavaScript sind alle Schritte sichtbar und das Formular funktioniert unverändert.
+    document.querySelectorAll('form[data-wizard]').forEach(function (form) {
+      var steps = Array.prototype.slice.call(form.querySelectorAll('fieldset.wiz-step'));
+      var submit = form.querySelector('.wiz-submit');
+      var nav = form.querySelector('.wiz-nav');
+      if (steps.length < 2 || !submit || !nav) { return; }
+      form.noValidate = true; // geprüft wird schrittweise per Skript (versteckte Felder lassen sich nicht fokussieren)
+      var idx = 0;
+      var progress = document.createElement('ol');
+      progress.className = 'wiz-steps';
+      progress.setAttribute('aria-label', 'Fortschritt');
+      var dots = steps.map(function (s, i) {
+        var li = document.createElement('li');
+        li.className = 'wiz-dot';
+        var num = document.createElement('span');
+        num.className = 'wiz-num';
+        num.textContent = String(i + 1);
+        li.appendChild(num);
+        li.appendChild(document.createTextNode(' ' + (s.getAttribute('data-step') || 'Schritt ' + (i + 1))));
+        progress.appendChild(li);
+        return li;
+      });
+      form.insertBefore(progress, steps[0]);
+      var back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'btn btn-secondary';
+      back.textContent = 'Zurück';
+      var next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'btn btn-primary';
+      next.textContent = 'Weiter';
+      nav.insertBefore(back, nav.firstChild);
+      nav.insertBefore(next, submit);
+
+      function fields(step) { return Array.prototype.slice.call(step.querySelectorAll('input, select, textarea')); }
+      function valid(step) {
+        var f = fields(step);
+        for (var i = 0; i < f.length; i++) {
+          if (!f[i].checkValidity()) { f[i].reportValidity(); return false; }
+        }
+        return true;
+      }
+      function summarize(step) {
+        var dl = step.querySelector('[data-wizard-summary]');
+        if (!dl) { return; }
+        while (dl.firstChild) { dl.removeChild(dl.firstChild); }
+        form.querySelectorAll('[data-label]').forEach(function (f) {
+          var v;
+          if (f.type === 'checkbox') { v = f.checked ? 'ja' : 'nein'; }
+          else if (f.tagName === 'SELECT') { v = f.options[f.selectedIndex] ? f.options[f.selectedIndex].text : ''; }
+          else if (f.type === 'password' || f.hasAttribute('data-secret')) { v = f.value ? '••••••••' : '–'; }
+          else { v = f.value.trim() === '' ? '–' : f.value.trim(); }
+          var dt = document.createElement('dt');
+          dt.textContent = f.getAttribute('data-label');
+          var dd = document.createElement('dd');
+          dd.textContent = v;
+          dl.appendChild(dt);
+          dl.appendChild(dd);
+        });
+      }
+      function show(i) {
+        idx = i;
+        steps.forEach(function (s, n) { s.hidden = n !== i; });
+        dots.forEach(function (d, n) {
+          d.classList.toggle('current', n === i);
+          d.classList.toggle('done', n < i);
+          if (n === i) { d.setAttribute('aria-current', 'step'); } else { d.removeAttribute('aria-current'); }
+        });
+        var last = i === steps.length - 1;
+        if (steps[i].hasAttribute('data-summary')) { summarize(steps[i]); }
+        back.hidden = i === 0;
+        next.hidden = last;
+        submit.hidden = !last;
+        var first = fields(steps[i])[0];
+        if (first && !last) { first.focus(); }
+      }
+      next.addEventListener('click', function () { if (valid(steps[idx])) { show(idx + 1); } });
+      back.addEventListener('click', function () { show(idx - 1); });
+      // Enter springt zum nächsten Schritt statt vorzeitig abzusenden.
+      form.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' && idx < steps.length - 1 && ev.target.tagName !== 'TEXTAREA' && ev.target.tagName !== 'BUTTON') {
+          ev.preventDefault();
+          next.click();
+        }
+      });
+      // Beim Absenden alle Schritte prüfen; bei einem Fehler dorthin springen.
+      form.addEventListener('submit', function (ev) {
+        for (var i = 0; i < steps.length; i++) {
+          if (!valid(steps[i])) { ev.preventDefault(); show(i); valid(steps[i]); return; }
+        }
+      });
+      show(0);
+    });
+
     // Bestätigungsdialog für riskante Formulare (data-confirm)
     document.addEventListener('submit', function (ev) {
       var b = ev.submitter && ev.submitter.getAttribute('data-confirm');

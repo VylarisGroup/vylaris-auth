@@ -19,7 +19,7 @@
   </ul>
 </section>
 <section class="card mt-6">
-  <h2 class="font-semibold">Neue Anwendung registrieren</h2>
+  <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-semibold">Neue Anwendung registrieren</h2><a class="btn btn-secondary btn-sm" href="/admin/apps/new"><i class="bx bx-rocket"></i> Assistent starten</a></div>
   <form method="post" action="/admin/apps" class="mt-3 grid gap-3">
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
     <label class="text-sm">Name<input class="input w-full" name="name" required minlength="2" maxlength="120"></label>

@@ -13,6 +13,8 @@ final class AdminController extends BaseController
     {
         $r->get('/admin', fn (Request $q) => $this->guard($q, fn ($u) => $this->dashboard($u)));
         $r->post('/admin/changelog/seen', fn (Request $q) => $this->guard($q, fn ($u) => $this->changelogSeen($u)));
+        $r->get('/admin/users/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->render('admin/wizard_user', ['licenseRequired' => $this->app->license->required()])));
+        $r->get('/admin/apps/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->denyFeature($u, 'oidc_apps') ?? $this->render('admin/wizard_app')));
         $r->get('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->users($q, $u)));
         $r->post('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->createUser($q, $u)));
         $r->get('/admin/users/{id}', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->userDetail((int) $p['id'], $u)));

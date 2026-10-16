@@ -20,7 +20,7 @@
   </ul>
 </section>
 <section class="card mt-6">
-  <h2 class="font-semibold">Anbieter hinzufügen</h2>
+  <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-semibold">Anbieter hinzufügen</h2><a class="btn btn-secondary btn-sm" href="/admin/social/new"><i class="bx bx-rocket"></i> Assistent starten</a></div>
   <form method="post" action="/admin/social" class="mt-3 grid gap-3" autocomplete="off">
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
     <div class="grid gap-3 sm:grid-cols-2">
