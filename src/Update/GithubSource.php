@@ -85,8 +85,15 @@ final class GithubSource implements UpdateSource
             if (!str_starts_with($url, 'https://') || !in_array($host, self::HOSTS, true)) {
                 throw new UpdateException('Unzulässiges Ziel beim Abruf von GitHub.');
             }
-            $headers = ['User-Agent: VylarisAuth-Updater', 'X-GitHub-Api-Version: 2022-11-28'];
-            $headers[] = $dest === null ? 'Accept: application/vnd.github+json' : 'Accept: application/octet-stream';
+            $headers = ['User-Agent: VylarisAuth-Updater'];
+            if ($host === 'api.github.com') {
+                $headers[] = 'X-GitHub-Api-Version: 2022-11-28';
+                // Die zipball-Weiterleitung der API braucht kein spezielles Accept; JSON-Accept nur für Metadaten.
+                $headers[] = $dest === null ? 'Accept: application/vnd.github+json' : 'Accept: */*';
+            } else {
+                // codeload/objects lehnen API-spezifische Accept-Header mit HTTP 415 ab.
+                $headers[] = 'Accept: */*';
+            }
             if ($this->token !== '' && $host === 'api.github.com') {
                 $headers[] = 'Authorization: Bearer ' . $this->token;
             }
