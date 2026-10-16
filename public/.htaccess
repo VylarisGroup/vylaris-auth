@@ -3,10 +3,9 @@ Options -Indexes -MultiViews
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    # HTTPS erzwingen
-    RewriteCond %{HTTPS} !=on
-    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Bewusst KEINE HTTPS-Umleitung hier: Hinter Plesk-nginx/Cloudflare/Proxy meldet Apache oft "http" und das
+    # führt zu TOO_MANY_REDIRECTS. HTTP→HTTPS bitte in Plesk ("Von HTTP zu HTTPS umleiten") bzw. im Proxy einschalten.
+    # Die App setzt HSTS und Secure-Cookies anhand von app.base_url (https://…).
     # Discovery auch dann bedienen, wenn ein echtes Verzeichnis .well-known existiert (z. B. von Plesk/Let's Encrypt angelegt)
     RewriteRule ^\.well-known/openid-configuration$ index.php [L]
     # Autorisierungsheader an PHP weiterreichen (Bearer-Token bei FastCGI)

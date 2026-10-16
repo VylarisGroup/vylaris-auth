@@ -30,7 +30,7 @@ final class Session
             $request->userAgent()
         );
         session_set_save_handler($handler, true);
-        $secure = $request->isSecure();
+        $secure = $request->isSecure() || str_starts_with((string) $config->get('app.base_url', ''), 'https://');
         session_name((string) $config->get('session.cookie_name', '__Host-vsid'));
         session_set_cookie_params([
             'lifetime' => 0,

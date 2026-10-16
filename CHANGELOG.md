@@ -3,6 +3,9 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.8.3 – 2026-10-16
+- Behoben: Fehler „TOO_MANY_REDIRECTS“ (Endlosschleife) bei frischen Installationen hinter Plesk-nginx, Cloudflare oder anderen Proxys. Die `.htaccess` erzwingt HTTPS nicht mehr selbst; HSTS und Secure-Cookies richten sich nach `app.base_url`. Bei bestehenden Installationen bitte die Zeilen „HTTPS erzwingen“ in `public/.htaccess` löschen (siehe docs/PLESK.md).
+
 ## 1.8.2 – 2026-10-16
 - Behoben: Icons und Layout erschienen nach einem Update kaputt, weil Browser alte CSS-/JS-Dateien bis zu 24 Stunden zwischenspeicherten. Statische Dateien tragen jetzt eine Versionskennung und laden nach jedem Update neu.
 - Verbessert: Fehlgeschlagene Social-Logins (z. B. Discord) protokollieren jetzt den genauen Grund (Netzwerkfehler, Antwort des Anbieters). Sichtbar unter Admin → Social Login → Anbieter → „Letzte fehlgeschlagene Anmeldungen“.
