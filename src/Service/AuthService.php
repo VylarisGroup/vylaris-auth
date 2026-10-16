@@ -50,7 +50,7 @@ final class AuthService
         }
         $licensed = $this->license !== null && $this->license->required();
         $licenseKey = LicenseService::normalizeKey($licenseKey);
-        if ($licensed && $licenseKey === '') {
+        if ($licensed && $licenseKey === '' && !$this->license->hasPool()) {
             $errors[] = 'Bitte geben Sie Ihren Lizenzschlüssel ein.';
         }
         if ($errors) {
@@ -62,7 +62,7 @@ final class AuthService
         if ($licensed) {
             // Schlüssel vorab prüfen (gültig, richtiges Produkt, freier Platz) – bevor irgendetwas angelegt wird.
             try {
-                $this->license->precheck($licenseKey);
+                $licenseKey = $this->license->resolveKey($licenseKey);
             } catch (LicenseException $e) {
                 $this->audit->log('auth.register_license_refused', null, ['reason' => $e->licenseCode, 'ref' => $this->emailRef($email)]);
                 return ['ok' => false, 'errors' => [$e->getMessage()]];

@@ -135,7 +135,9 @@
   /* Logo: je Theme ein Bild (wenn kein separates Dunkel-Logo existiert, zeigen beide dasselbe) */
   .brand-logo { @apply h-9 w-auto max-w-[11rem] object-contain; }
   [data-theme='dark'] .logo-light, :root:not([data-theme='dark']) .logo-dark { display: none; }
-  .theme-toggle { @apply grid h-10 w-10 place-items-center rounded-lg text-xl text-slate-600 transition hover:bg-brand-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-brand-300; }
+  /* Sichtbarer Rahmen und Hintergrund, damit der Knopf in jedem Theme/Branding erkennbar bleibt */
+  .theme-toggle { @apply inline-flex h-10 min-w-[2.5rem] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/70 px-2 text-xl text-slate-700 transition hover:bg-brand-50 hover:text-brand-700 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-brand-300; }
+  .theme-toggle .theme-label { @apply text-sm font-medium md:hidden; }
   .theme-toggle .ico-sun { @apply hidden; }
   [data-theme='dark'] .theme-toggle .ico-sun { @apply block; }
   [data-theme='dark'] .theme-toggle .ico-moon { @apply hidden; }

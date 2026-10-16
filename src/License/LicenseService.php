@@ -129,6 +129,90 @@ final class LicenseService
         return $r;
     }
 
+    // ------------------------------------------------------------------ Schlüssel-Pool (einmal eingeben, automatisch verwenden)
+
+    /** @return array<int,array{id:int|string,license_key:string,added_by:?int,created_at:string}> */
+    public function pool(): array
+    {
+        try {
+            return $this->db->all('SELECT id, license_key, added_by, created_at FROM license_pool ORDER BY id');
+        } catch (\Throwable) {
+            return []; // Migration 006 noch nicht eingespielt
+        }
+    }
+
+    public function hasPool(): bool
+    {
+        return $this->pool() !== [];
+    }
+
+    /**
+     * Schlüssel hinterlegen. Mit $validate wird er vorher beim Lizenzserver geprüft (ein gerade voller Schlüssel ist erlaubt).
+     * @throws LicenseException
+     */
+    public function addToPool(string $key, ?int $actorId, bool $validate = true): void
+    {
+        $key = self::normalizeKey($key);
+        if (!self::validKeyFormat($key)) {
+            throw new LicenseException('Bitte geben Sie einen gültigen Lizenzschlüssel ein.', 'BAD_FORMAT');
+        }
+        if ($validate) {
+            try {
+                $this->precheck($key);
+            } catch (LicenseException $e) {
+                if ($e->licenseCode !== 'DEVICE_LIMIT') {
+                    throw $e;
+                }
+            }
+        }
+        if ((int) $this->db->scalar('SELECT COUNT(*) FROM license_pool WHERE license_key = ?', [$key]) > 0) {
+            return;
+        }
+        $this->db->insert('license_pool', ['license_key' => $key, 'added_by' => $actorId, 'created_at' => Clock::db()]);
+        $this->audit->log('license.pool_added', $actorId, ['key' => self::mask($key)], $actorId);
+    }
+
+    public function removeFromPool(int $id, int $actorId): void
+    {
+        $row = $this->db->one('SELECT license_key FROM license_pool WHERE id = ?', [$id]);
+        if ($row === null) {
+            return;
+        }
+        $this->db->run('DELETE FROM license_pool WHERE id = ?', [$id]);
+        $this->audit->log('license.pool_removed', $actorId, ['key' => self::mask((string) $row['license_key'])], $actorId);
+    }
+
+    /**
+     * Schlüssel für ein neues Konto bestimmen und vorab prüfen. Ist keiner angegeben, wird der Reihe nach
+     * jeder hinterlegte Schlüssel versucht, bis einer einen freien Platz hat.
+     * @throws LicenseException
+     */
+    public function resolveKey(string $key): string
+    {
+        $key = self::normalizeKey($key);
+        if ($key !== '') {
+            $this->precheck($key);
+            return $key;
+        }
+        $pool = $this->pool();
+        if ($pool === []) {
+            throw new LicenseException('Bitte geben Sie Ihren Lizenzschlüssel ein.', 'NO_KEY');
+        }
+        $last = null;
+        foreach ($pool as $row) {
+            try {
+                $this->precheck((string) $row['license_key']);
+                return (string) $row['license_key'];
+            } catch (LicenseException $e) {
+                if (!in_array($e->licenseCode, ['DEVICE_LIMIT', 'EXPIRED', 'BLOCKED', 'NOT_FOUND', 'WRONG_PRODUCT'], true)) {
+                    throw $e; // Server nicht erreichbar o. Ä.: nicht mit dem nächsten Schlüssel weitermachen
+                }
+                $last = $e;
+            }
+        }
+        throw count($pool) > 1 ? new LicenseException('Alle hinterlegten Lizenzschlüssel sind voll, abgelaufen oder gesperrt. Bitte wenden Sie sich an den Administrator.', 'DEVICE_LIMIT') : $last;
+    }
+
     /** Gibt einen Platz beim Lizenzserver frei; bei Fehlern wird die Freigabe vorgemerkt (Cron wiederholt sie). */
     public function releaseDevice(string $key, string $hwid): void
     {

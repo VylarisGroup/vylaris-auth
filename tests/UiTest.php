@@ -82,6 +82,15 @@ final class UiTest extends TestCase
         $this->assertNotNull($ctx->app->users->findByEmail('neu@example.org'));
     }
 
+    public function testThemeToggleHasVisibleLabelAndFrame(): void
+    {
+        $ctx = $this->ctx();
+        $this->assertStringContains('class="theme-label"', (new TestBrowser($ctx->app))->get('/login')->body);
+        $this->assertStringContains('class="theme-label"', $this->login($ctx, 'admin@example.org')->get('/admin')->body);
+        $css = (string) file_get_contents(dirname(__DIR__) . '/public/assets/app.css');
+        $this->assertTrue((bool) preg_match('/\.theme-toggle\{[^}]*border-width:1px/', $css), 'Umschalter hat einen sichtbaren Rahmen');
+    }
+
     public function testWizardsAreAdminOnly(): void
     {
         $ctx = $this->ctx();

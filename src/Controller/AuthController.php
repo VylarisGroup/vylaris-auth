@@ -74,14 +74,14 @@ final class AuthController extends BaseController
 
     private function registerForm(Request $q): Response
     {
-        return $this->render('auth/register', ['errors' => [], 'old' => ['email' => '', 'name' => '', 'license_key' => ''], 'licenseRequired' => $this->app->license->required()]);
+        return $this->render('auth/register', ['errors' => [], 'old' => ['email' => '', 'name' => '', 'license_key' => ''], 'licenseRequired' => $this->app->license->required(), 'licenseOptional' => $this->app->license->hasPool()]);
     }
 
     private function register(Request $q): Response
     {
         $res = $this->app->auth->register($q->str('email'), $q->str('password'), $q->str('name'), $q->ip(), $q->str('accept_privacy') === '1', $this->app->brand->get('privacy_version'), $q->str('license_key'));
         if (!$res['ok']) {
-            return $this->render('auth/register', ['errors' => $res['errors'], 'old' => ['email' => $q->str('email'), 'name' => $q->str('name'), 'license_key' => $q->str('license_key')], 'licenseRequired' => $this->app->license->required()], 422);
+            return $this->render('auth/register', ['errors' => $res['errors'], 'old' => ['email' => $q->str('email'), 'name' => $q->str('name'), 'license_key' => $q->str('license_key')], 'licenseRequired' => $this->app->license->required(), 'licenseOptional' => $this->app->license->hasPool()], 422);
         }
         return $this->render('message', [
             'title' => 'Fast geschafft',

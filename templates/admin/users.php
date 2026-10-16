@@ -25,7 +25,7 @@
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
     <input class="input w-full" type="email" name="email" placeholder="E-Mail" required maxlength="255">
     <input class="input w-full" name="name" placeholder="Anzeigename" required maxlength="120">
-    <?php if (!empty($licenseRequired)): ?><input class="input w-full font-mono" name="license_key" placeholder="Lizenzschlüssel (belegt einen Platz)" required maxlength="64" autocomplete="off" spellcheck="false"><?php endif; ?>
+    <?php if (!empty($licenseRequired)): ?><input class="input w-full font-mono" name="license_key" placeholder="<?= !empty($licenseOptional) ? 'Lizenzschlüssel (leer = hinterlegter Schlüssel)' : 'Lizenzschlüssel (belegt einen Platz)' ?>" <?= empty($licenseOptional) ? 'required' : '' ?> maxlength="64" autocomplete="off" spellcheck="false"><?php endif; ?>
     <button class="btn btn-primary" type="submit">Anlegen</button>
   </form>
 </section>

@@ -31,6 +31,17 @@ VylarisAuth ist lizenzpflichtig: **Jedes Konto belegt einen Platz („Gerät“)
 ```
 **Bestehende Installationen:** Migration einspielen (`php bin/migrate.php`); ein `license`-Block ist nicht nötig, die Standardwerte (Lizenzpflicht an) greifen automatisch.
 
+## Schlüssel nur einmal eingeben (Pool)
+
+Unter **Admin → Lizenz → Hinterlegte Lizenzschlüssel** tragen Sie Ihren Schlüssel einmal ein (er wird beim Lizenzserver geprüft). Danach gilt:
+
+* Neue Konten – Registrierung **und** Anlage durch Administratoren – brauchen keinen Schlüssel mehr. Das Schlüsselfeld im Registrierungsformular entfällt.
+* Es wird immer der älteste hinterlegte Schlüssel mit freiem Platz verwendet. Sind alle Plätze belegt, schlägt die Anmeldung neuer Konten mit „Alle Plätze … belegt“ fehl – hinterlegen Sie dann einen weiteren Schlüssel. Wird ein Platz frei (Konto gelöscht), wird er wieder vergeben.
+* Gibt ein Administrator beim Anlegen eines Kontos einen Schlüssel ein, wird er automatisch ebenfalls hinterlegt. Schlüssel aus der öffentlichen Registrierung werden **nicht** hinterlegt.
+* Ist der Lizenzserver nicht erreichbar, scheitert die Anmeldung (es wird nicht auf den nächsten Schlüssel ausgewichen).
+* Bestandskonten ohne Schlüssel können unter Konto → Lizenz das Feld leer lassen und erhalten den hinterlegten Schlüssel.
+* Entfernen eines Schlüssels aus der Liste lässt bestehende Konten unberührt (sie behalten ihren Platz).
+
 ## Fehlersuche
 
 | Meldung | Ursache |

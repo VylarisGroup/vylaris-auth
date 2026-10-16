@@ -129,11 +129,12 @@ final class AdminService
         $licensed = $this->license !== null && $this->license->required();
         $licenseKey = LicenseService::normalizeKey($licenseKey);
         if ($licensed) {
-            if ($licenseKey === '') {
+            if ($licenseKey === '' && !$this->license->hasPool()) {
                 throw new \InvalidArgumentException('Bitte einen Lizenzschlüssel angeben – jedes neue Konto belegt einen Platz.');
             }
+            $explicit = $licenseKey !== '';
             try {
-                $this->license->precheck($licenseKey);
+                $licenseKey = $this->license->resolveKey($licenseKey);
             } catch (LicenseException $e) {
                 throw new \InvalidArgumentException($e->getMessage());
             }
@@ -157,6 +158,13 @@ final class AdminService
                 $this->license->releaseDevice($licenseKey, $this->license->hwid($id));
             }
             throw $e;
+        }
+        if ($licensed && ($explicit ?? false)) {
+            try {
+                $this->license->addToPool($licenseKey, $actorId, false); // einmal eingegeben, ab jetzt automatisch für weitere Konten
+            } catch (\Throwable) {
+                // nicht kritisch
+            }
         }
         $token = $this->tokens->create($id, TokenService::RESET_PASSWORD, 3 * 86400);
         $this->mailer->queue($email, 'Einladung zu {app}', "Für Sie wurde ein {org}-Konto angelegt.\n\nLegen Sie Ihr Passwort fest (3 Tage gültig):\n" . $this->config->baseUrl() . '/password/reset?token=' . $token . "\n");

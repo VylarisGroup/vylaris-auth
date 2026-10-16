@@ -9,7 +9,7 @@
     <p class="mt-2 text-sm text-slate-500">Für Ihr Konto ist kein Lizenzschlüssel hinterlegt. Es nutzt den Bestandsschutz und belegt keinen Platz.</p>
     <form method="post" action="/account/license" class="mt-4 flex flex-wrap gap-2">
       <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
-      <input class="input min-w-0 flex-1 font-mono" name="license_key" placeholder="Lizenzschlüssel" maxlength="64" autocomplete="off" spellcheck="false" required>
+      <input class="input min-w-0 flex-1 font-mono" name="license_key" placeholder="<?= !empty($hasPool) ? 'Lizenzschlüssel (leer = hinterlegter Schlüssel)' : 'Lizenzschlüssel' ?>" maxlength="64" autocomplete="off" spellcheck="false" <?= empty($hasPool) ? 'required' : '' ?>>
       <button class="btn btn-primary" type="submit">Hinterlegen</button>
     </form>
   <?php else: ?>

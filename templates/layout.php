@@ -33,7 +33,7 @@
         <?php if ($brand['showName']): ?><span><?= $e($appName) ?></span><?php endif; ?>
       </a>
       <?php if ($brand['allowToggle'] && empty($currentUser)): ?>
-      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel umschalten"><i class="bx bx-moon ico-moon"></i><i class="bx bx-sun ico-sun"></i></button>
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel umschalten"><i class="bx bx-moon ico-moon"></i><i class="bx bx-sun ico-sun"></i><span class="theme-label">Hell/Dunkel</span></button>
       <?php endif; ?>
       <?php if (!empty($currentUser)): ?>
       <button type="button" class="nav-toggle" aria-label="Menü" aria-expanded="false" aria-controls="nav-panel"><i class="bx bx-menu"></i></button>
@@ -42,7 +42,7 @@
         <a class="nav-link" href="/account/sessions"><i class="bx bx-devices"></i> Geräte</a>
         <?php if (!empty($isAdmin)): ?><a class="nav-link" href="/admin"><i class="bx bx-cog"></i> Admin</a><?php endif; ?>
         <?php if ($brand['allowToggle']): ?>
-        <button type="button" class="theme-toggle max-md:w-full max-md:justify-start max-md:gap-2 max-md:px-3" data-theme-toggle aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel umschalten"><i class="bx bx-moon ico-moon"></i><i class="bx bx-sun ico-sun"></i></button>
+        <button type="button" class="theme-toggle max-md:w-full max-md:justify-start max-md:px-3" data-theme-toggle aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel umschalten"><i class="bx bx-moon ico-moon"></i><i class="bx bx-sun ico-sun"></i><span class="theme-label">Hell/Dunkel</span></button>
         <?php endif; ?>
         <form method="post" action="/logout" class="contents">
           <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">

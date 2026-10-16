@@ -12,8 +12,8 @@
     <?php if (!empty($licenseRequired)): ?>
     <fieldset class="wiz-step" data-step="Lizenz">
       <legend class="wiz-legend">Welcher Lizenzschlüssel gilt?</legend>
-      <label class="text-sm">Lizenzschlüssel<input class="input w-full font-mono" name="license_key" required maxlength="64" autocomplete="off" spellcheck="false" data-label="Lizenzschlüssel"></label>
-      <p class="wiz-hint">Der Schlüssel belegt einen Platz (Gerät) in der Lizenz. Er wird beim Lizenzserver geprüft; ist er ungültig oder voll, wird kein Konto angelegt.</p>
+      <label class="text-sm">Lizenzschlüssel<input class="input w-full font-mono" name="license_key" <?= empty($licenseOptional) ? 'required' : '' ?> maxlength="64" autocomplete="off" spellcheck="false" data-label="Lizenzschlüssel"></label>
+      <p class="wiz-hint"><?= !empty($licenseOptional) ? 'Leer lassen, um den hinterlegten Schlüssel zu verwenden. ' : '' ?>Der Schlüssel belegt einen Platz (Gerät) in der Lizenz. Er wird beim Lizenzserver geprüft; ist er ungültig oder voll, wird kein Konto angelegt.</p>
     </fieldset>
     <?php endif; ?>
     <fieldset class="wiz-step" data-step="Prüfen" data-summary>

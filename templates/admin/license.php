@@ -12,7 +12,26 @@
   </dl>
   <form method="post" action="/admin/license/refresh" class="mt-4">
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
-    <button class="btn" type="submit"><i class="bx bx-refresh"></i> Alle jetzt beim Lizenzserver prüfen</button>
+    <button class="btn btn-secondary" type="submit"><i class="bx bx-refresh"></i> Alle jetzt beim Lizenzserver prüfen</button>
+  </form>
+</section>
+
+<section class="card mt-6">
+  <h2 class="font-semibold"><i class="bx bx-key"></i> Hinterlegte Lizenzschlüssel</h2>
+  <p class="mt-1 text-sm text-slate-500">Einmal eingeben genügt: Neue Konten (Registrierung und Anlage durch Administratoren) verwenden diese Schlüssel automatisch – zuerst den ältesten mit freiem Platz –, bis alle Plätze (Geräte) belegt sind. Dann einfach einen weiteren Schlüssel hinterlegen.</p>
+  <div class="table-wrap mt-3"><table class="w-full text-left text-sm">
+    <thead class="text-xs uppercase tracking-wide text-slate-400"><tr><th class="py-1 pr-3">Schlüssel</th><th class="pr-3">Plan</th><th class="pr-3">Plätze</th><th class="pr-3">Hinterlegt</th><th></th></tr></thead>
+    <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+    <?php foreach ($pool as $p): ?>
+      <tr><td class="py-2 pr-3 font-mono"><?= $e($p['key']) ?></td><td class="pr-3"><?= $e($p['plan'] ?? '–') ?></td><td class="pr-3"><?= (int) $p['seats'] ?><?= $p['max'] !== null ? ' / ' . (int) $p['max'] : '' ?></td><td class="pr-3"><?= $e($p['created_at']) ?></td>
+        <td><form method="post" action="/admin/license/keys/<?= (int) $p['id'] ?>/remove"><input type="hidden" name="_csrf" value="<?= $e($csrf) ?>"><button class="btn btn-outline-danger btn-sm" type="submit" data-confirm="Schlüssel entfernen? Bestehende Konten behalten ihren Platz.">Entfernen</button></form></td></tr>
+    <?php endforeach; ?>
+    <?php if (!$pool): ?><tr><td colspan="5" class="py-2 text-slate-500">Noch kein Schlüssel hinterlegt – neue Konten müssen den Schlüssel selbst eingeben.</td></tr><?php endif; ?>
+    </tbody></table></div>
+  <form method="post" action="/admin/license/keys" class="mt-4 flex flex-wrap gap-2">
+    <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
+    <input class="input min-w-0 flex-1 font-mono" name="license_key" placeholder="Lizenzschlüssel hinterlegen" maxlength="64" autocomplete="off" spellcheck="false" required>
+    <button class="btn btn-primary" type="submit"><i class="bx bx-plus"></i> Hinterlegen</button>
   </form>
 </section>
 
