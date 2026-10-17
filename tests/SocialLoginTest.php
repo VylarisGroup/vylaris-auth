@@ -503,8 +503,23 @@ final class SocialLoginTest extends TestCase
 
     // ------------------------------------------------------------ MFA bleibt Pflicht
 
-    public function testOwnSecondFactorIsStillRequiredAfterProviderLogin(): void
+    public function testProviderLoginSkipsSecondFactorByDefault(): void
     {
+        $this->flow(new TestBrowser($this->ctx->app), 'google', $this->google());
+        $uid = (int) $this->user('nina@example.org')['id'];
+        $this->enableTotp($uid);
+
+        $b = new TestBrowser($this->ctx->app, '203.0.113.101');
+        $r = $this->flow($b, 'google', $this->google(), '/account/sessions');
+        $this->assertSame('/account/sessions', $r->headers['Location']);
+        $this->assertSame($uid, $b->session()->userId());
+        $this->assertSame(['fed'], $b->session()->get('amr'));
+        $this->assertSame(200, $b->get('/account')->status);
+    }
+
+    public function testOwnSecondFactorIsRequiredAfterProviderLoginWhenSkipDisabled(): void
+    {
+        $this->ctx->app->config->override('security.social_skips_mfa', false);
         $this->flow(new TestBrowser($this->ctx->app), 'google', $this->google());
         $uid = (int) $this->user('nina@example.org')['id'];
         $secret = $this->enableTotp($uid);

@@ -47,6 +47,7 @@ return [
         'allow_registration'         => true,
         'require_email_verification' => true,
         'admin_requires_mfa'         => true,  // Admin-Bereich nur mit MFA-Anmeldung
+        'social_skips_mfa'           => true,  // Social Login überspringt TOTP/Passkey (Admin-Bereich verlangt weiterhin MFA); false = zweiter Faktor auch nach Social Login
         'magic_link_enabled'         => true,  // Anmeldung per E-Mail-Link (zweiter Faktor bleibt Pflicht, falls eingerichtet)
         'magic_link_ttl'             => 900,   // Gültigkeit des Links in Sekunden (120–3600)
         'magic_link_same_browser'    => false, // true: Link nur im anfragenden Browser einlösbar (strenger, aber unbequemer)

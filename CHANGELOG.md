@@ -3,6 +3,9 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.9.1 – 2026-10-17
+- Geändert: Social Login überspringt jetzt den eigenen zweiten Faktor (TOTP/Passkey); der Anbieter-Login gilt als vollwertig. Der Admin-Bereich verlangt weiterhin einen zweiten Faktor. Wer den alten Ablauf will, setzt in `config/config.php` unter `security` `'social_skips_mfa' => false`.
+
 ## 1.9.0 – 2026-10-17
 - Neu: Anmeldung per Magic Link. Auf der Login-Seite „Anmeldelink per E-Mail“: Link per Mail, Bestätigungsseite, Einmalverwendung, 15 Minuten gültig. Ein eingerichteter zweiter Faktor (TOTP/Passkey) wird weiterhin abgefragt; für den Admin-Bereich reicht der Link allein nicht. Einstellungen und Details: docs/MAGIC-LINK.md.
 

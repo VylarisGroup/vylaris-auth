@@ -82,8 +82,9 @@ final class SocialController extends BaseController
 
         $uid = (int) $res->userId;
         $next = $res->next;
-        if ($this->app->auth->hasMfa($uid)) {
-            // Auch bei externem Login bleibt der eigene zweite Faktor verbindlich.
+        if ($this->app->auth->hasMfa($uid) && !$this->app->config->get('security.social_skips_mfa', true)) {
+            // Nur mit security.social_skips_mfa=false bleibt der eigene zweite Faktor auch bei externem Login verbindlich.
+            // (Standard: der Anbieter-Login gilt als vollwertig, TOTP/Passkey werden übersprungen.)
             $this->app->auth->startMfaChallenge($session, $uid, ['fed']);
             $session->set('mfa_next', $next);
             return $this->redirect('/mfa');
