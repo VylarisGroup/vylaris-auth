@@ -3,6 +3,9 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.9.0 – 2026-10-17
+- Neu: Anmeldung per Magic Link. Auf der Login-Seite „Anmeldelink per E-Mail“: Link per Mail, Bestätigungsseite, Einmalverwendung, 15 Minuten gültig. Ein eingerichteter zweiter Faktor (TOTP/Passkey) wird weiterhin abgefragt; für den Admin-Bereich reicht der Link allein nicht. Einstellungen und Details: docs/MAGIC-LINK.md.
+
 ## 1.8.5 – 2026-10-16
 - Neu: Anleitung für KeyHelp (docs/KEYHELP.md). `public/.htaccess` setzt `DirectoryIndex index.php` ausdrücklich und ist für Plesk und KeyHelp ausgelegt.
 

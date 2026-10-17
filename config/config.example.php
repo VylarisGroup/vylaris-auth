@@ -47,6 +47,9 @@ return [
         'allow_registration'         => true,
         'require_email_verification' => true,
         'admin_requires_mfa'         => true,  // Admin-Bereich nur mit MFA-Anmeldung
+        'magic_link_enabled'         => true,  // Anmeldung per E-Mail-Link (zweiter Faktor bleibt Pflicht, falls eingerichtet)
+        'magic_link_ttl'             => 900,   // Gültigkeit des Links in Sekunden (120–3600)
+        'magic_link_same_browser'    => false, // true: Link nur im anfragenden Browser einlösbar (strenger, aber unbequemer)
         'audit_retention_days'       => 365,   // Aufbewahrung Audit-Log (min. 30)
         'trusted_proxies'            => [],   // z. B. ['203.0.113.10'], sonst leer
     ],

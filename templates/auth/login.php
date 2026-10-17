@@ -19,6 +19,9 @@
   <?php if (!empty($passkeyEnabled)): ?>
   <button id="passkey-login" data-next="<?= $e($next ?? '') ?>" class="btn btn-secondary mt-3 w-full" type="button"><i class="bx bx-fingerprint"></i> Mit Passkey anmelden</button>
   <?php endif; ?>
+  <?php if (!empty($magicLinkEnabled)): ?>
+  <a class="btn btn-secondary mt-3 w-full" href="/login/magic<?= !empty($next) ? '?next=' . rawurlencode($next) : '' ?>"><i class="bx bx-envelope"></i> Anmeldelink per E-Mail</a>
+  <?php endif; ?>
   <?php require __DIR__ . '/../partials/social-buttons.php'; ?>
   <?php if (!empty($unverified)): ?>
   <form method="post" action="/verify-email/resend" class="mt-3">

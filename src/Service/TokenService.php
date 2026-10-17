@@ -12,6 +12,7 @@ final class TokenService
     public const RESET_PASSWORD = 'reset_password';
     public const DELETE_ACCOUNT = 'delete_account';
     public const CHANGE_EMAIL = 'change_email';
+    public const MAGIC_LINK = 'magic_link';
 
     public function __construct(private Database $db)
     {

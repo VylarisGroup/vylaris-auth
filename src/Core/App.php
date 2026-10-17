@@ -173,6 +173,7 @@ final class App
         $this->view->share('csrf', Csrf::token($this->session));
         $this->view->share('navPath', $request->path);
         $this->view->share('assetVer', $this->assetVersion());
+        $this->view->share('magicLinkEnabled', $this->auth->magicLinkEnabled());
         $user = $this->auth->currentUser($this->session);
         $this->view->share('currentUser', $user);
         $this->view->share('isAdmin', $user !== null && $this->policy->isAdmin((int) $user['id']));

@@ -13,6 +13,10 @@ final class AuthController extends BaseController
         $r->get('/', fn (Request $q) => $this->redirect($this->app->currentUser() ? '/account' : '/login'));
         $r->get('/login', fn (Request $q) => $this->loginForm($q));
         $r->post('/login', fn (Request $q) => $this->login($q));
+        $r->get('/login/magic', fn (Request $q) => $this->magicForm($q));
+        $r->post('/login/magic', fn (Request $q) => $this->magicRequest($q));
+        $r->get('/login/magic/verify', fn (Request $q) => $this->magicConfirm($q));
+        $r->post('/login/magic/verify', fn (Request $q) => $this->magicLogin($q));
         $r->post('/logout', fn (Request $q) => $this->logout($q));
         $r->get('/register', fn (Request $q) => $this->registerForm($q));
         $r->post('/register', fn (Request $q) => $this->register($q));
@@ -126,5 +130,62 @@ final class AuthController extends BaseController
             return $this->render('auth/reset', ['token' => $q->str('token'), 'errors' => $errors], 422);
         }
         return $this->render('message', ['title' => 'Passwort geändert', 'message' => 'Ihr Passwort wurde geändert. Alle bisherigen Sitzungen wurden beendet.', 'icon' => 'bx-check-circle', 'link' => ['/login', 'Zur Anmeldung']]);
+    }
+
+    // ------------------------------------------------------------------ Magic Link
+
+    private function magicForm(Request $q): Response
+    {
+        if (!$this->app->auth->magicLinkEnabled()) {
+            return $this->redirect('/login');
+        }
+        return $this->render('auth/magic', ['next' => Redirect::safeLocal($q->str('next') ?: null, ''), 'email' => $q->str('email')]);
+    }
+
+    private function magicRequest(Request $q): Response
+    {
+        $session = $this->app->session();
+        $nonce = bin2hex(random_bytes(16));
+        $session->set('magic_nonce', $nonce);
+        $this->app->auth->requestMagicLink($q->str('email'), $q->ip(), $nonce, Redirect::safeLocal($q->str('next') ?: null, ''));
+        return $this->render('message', ['title' => 'Anmeldelink unterwegs', 'message' => 'Falls ein Konto mit dieser Adresse existiert, haben wir einen Anmeldelink geschickt. Er ist kurze Zeit gültig und nur einmal verwendbar.', 'icon' => 'bx-envelope']);
+    }
+
+    /** Der Link aus der E-Mail verbraucht nichts: erst ein Klick auf „Anmelden“ (POST) löst ihn ein. */
+    private function magicConfirm(Request $q): Response
+    {
+        $token = $q->str('token');
+        $info = $this->app->auth->previewMagicLink($token);
+        if ($info === null) {
+            return $this->render('message', ['title' => 'Link ungültig', 'message' => 'Der Anmeldelink ist ungültig, abgelaufen oder wurde schon verwendet.', 'icon' => 'bx-error-circle', 'link' => ['/login/magic', 'Neuen Link anfordern']], 400);
+        }
+        return $this->render('auth/magic_confirm', ['token' => $token, 'accountEmail' => $info['email'], 'next' => Redirect::safeLocal($q->str('next') ?: null, '')]);
+    }
+
+    private function magicLogin(Request $q): Response
+    {
+        $session = $this->app->session();
+        $nonce = $session->get('magic_nonce');
+        $next = Redirect::safeLocal($q->str('next') ?: null, '');
+        $res = $this->app->auth->consumeMagicLink($q->str('token'), is_string($nonce) ? $nonce : null, $q->ip());
+        switch ($res->status) {
+            case 'ok':
+                $session->forget('magic_nonce');
+                $this->app->auth->establishSession($session, (int) $res->userId, ['mlink']);
+                return $this->redirect($next !== '' ? $next : '/account');
+            case 'mfa_required':
+                $session->forget('magic_nonce');
+                $this->app->auth->startMfaChallenge($session, (int) $res->userId, ['mlink']);
+                $session->set('mfa_next', $next);
+                return $this->redirect('/mfa');
+            case 'wrong_browser':
+                return $this->render('message', ['title' => 'Anderer Browser', 'message' => 'Aus Sicherheitsgründen muss der Link im selben Browser geöffnet werden, in dem Sie ihn angefordert haben.', 'icon' => 'bx-error-circle', 'link' => ['/login/magic', 'Neuen Link anfordern']], 403);
+            case 'throttled':
+                return $this->render('message', ['title' => 'Zu viele Versuche', 'message' => 'Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.', 'icon' => 'bx-time'], 429);
+            case 'locked':
+                return $this->render('message', ['title' => 'Konto gesperrt', 'message' => 'Dieses Konto ist gesperrt. Bitte wenden Sie sich an den Support.', 'icon' => 'bx-lock'], 403);
+            default:
+                return $this->render('message', ['title' => 'Link ungültig', 'message' => 'Der Anmeldelink ist ungültig, abgelaufen oder wurde schon verwendet.', 'icon' => 'bx-error-circle', 'link' => ['/login/magic', 'Neuen Link anfordern']], 400);
+        }
     }
 }

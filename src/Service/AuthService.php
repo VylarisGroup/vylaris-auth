@@ -192,6 +192,80 @@ final class AuthService
         return new AuthResult('ok', $uid);
     }
 
+    // ---------------------------------------------------------------- Magic Link (Anmeldung per E-Mail-Link)
+
+    public function magicLinkEnabled(): bool
+    {
+        return (bool) $this->config->get('security.magic_link_enabled', true);
+    }
+
+    /** Verschickt (falls das Konto existiert) einen einmaligen Anmeldelink. Antwort nach außen immer gleich. */
+    public function requestMagicLink(string $email, string $ip, ?string $browserNonce = null, string $next = ''): void
+    {
+        if (!$this->magicLinkEnabled()) {
+            return;
+        }
+        $email = UserRepository::normalizeEmail($email);
+        if (!$this->limiter->hit('magic-ip:' . $ip, 10, 3600) || !$this->limiter->hit('magic-acct:' . $email, 5, 3600)) {
+            $this->audit->log('auth.magic_throttled', null, ['email_ref' => $this->emailRef($email)]);
+            return;
+        }
+        $user = $this->users->findByEmail($email);
+        if (!$user || $this->users->isLocked($user)) {
+            return;
+        }
+        $ttl = max(120, min(3600, (int) $this->config->get('security.magic_link_ttl', 900)));
+        $bind = ($browserNonce !== null && $browserNonce !== '' && $this->config->get('security.magic_link_same_browser', false)) ? hash('sha256', $browserNonce) : null;
+        $token = $this->tokens->create((int) $user['id'], TokenService::MAGIC_LINK, $ttl, $bind);
+        $url = $this->config->baseUrl() . '/login/magic/verify?token=' . $token . ($next !== '' ? '&next=' . rawurlencode($next) : '');
+        $this->mailer->queue($user['email'], 'Ihr Anmeldelink', "Mit diesem Link melden Sie sich bei {app} an (" . intdiv($ttl, 60) . " Minuten gültig, nur einmal verwendbar):\n" . $url . "\n\nWenn Sie das nicht angefordert haben, ignorieren Sie diese Nachricht – ohne Klick auf den Link passiert nichts.\n");
+        $this->audit->log('auth.magic_requested', (int) $user['id']);
+    }
+
+    /** Prüft einen Link, ohne ihn zu verbrauchen (Mail-Scanner rufen Links vorab ab). @return array{email:string}|null */
+    public function previewMagicLink(string $token): ?array
+    {
+        $t = $this->tokens->peekWithPayload($token, TokenService::MAGIC_LINK);
+        $user = $t ? $this->users->findById($t['user_id']) : null;
+        return $user ? ['email' => (string) $user['email']] : null;
+    }
+
+    /** Löst den Link ein. status: ok | mfa_required | invalid | wrong_browser | throttled | locked */
+    public function consumeMagicLink(string $token, ?string $browserNonce, string $ip): AuthResult
+    {
+        if (!$this->magicLinkEnabled()) {
+            return new AuthResult('invalid');
+        }
+        if (!$this->limiter->hit('magic-use:' . $ip, 20, 900)) {
+            return new AuthResult('throttled');
+        }
+        $t = $this->tokens->peekWithPayload($token, TokenService::MAGIC_LINK);
+        if ($t === null) {
+            return new AuthResult('invalid');
+        }
+        if ($t['payload'] !== null && ($browserNonce === null || $browserNonce === '' || !hash_equals((string) $t['payload'], hash('sha256', $browserNonce)))) {
+            return new AuthResult('wrong_browser');
+        }
+        $uid = $this->tokens->consume($token, TokenService::MAGIC_LINK);
+        $user = $uid !== null ? $this->users->findById($uid) : null;
+        if ($user === null) {
+            return new AuthResult('invalid');
+        }
+        if ($this->users->isLocked($user)) {
+            $this->audit->log('auth.login_blocked_locked', $uid);
+            return new AuthResult('locked');
+        }
+        if ($user['email_verified_at'] === null) {
+            $this->users->markVerified($uid); // Zugriff auf das Postfach wurde nachgewiesen
+        }
+        $this->users->recordLoginSuccess($uid);
+        if ($this->hasMfa($uid)) {
+            return new AuthResult('mfa_required', $uid); // zweiter Faktor bleibt verbindlich
+        }
+        $this->audit->log('auth.login', $uid, ['amr' => 'mlink']);
+        return new AuthResult('ok', $uid);
+    }
+
     public function hasMfa(int $userId): bool
     {
         $totp = $this->db->scalar('SELECT 1 FROM mfa_totp WHERE user_id = ? AND confirmed_at IS NOT NULL', [$userId]);
