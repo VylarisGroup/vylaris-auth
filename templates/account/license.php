@@ -7,11 +7,15 @@
     <p class="mt-2 text-sm text-slate-500">Für diese Installation ist kein Lizenzschlüssel erforderlich; alle Funktionen stehen zur Verfügung.</p>
   <?php elseif ($lic['keyless']): ?>
     <p class="mt-2 text-sm text-slate-500">Für Ihr Konto ist kein Lizenzschlüssel hinterlegt. Es nutzt den Bestandsschutz und belegt keinen Platz.</p>
-    <form method="post" action="/account/license" class="mt-4 flex flex-wrap gap-2">
+    <?php if (!empty($hasPool)): ?>
+    <form method="post" action="/account/license" class="mt-4">
       <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
-      <input class="input min-w-0 flex-1 font-mono" name="license_key" placeholder="<?= !empty($hasPool) ? 'Lizenzschlüssel (leer = hinterlegter Schlüssel)' : 'Lizenzschlüssel' ?>" maxlength="64" autocomplete="off" spellcheck="false" <?= empty($hasPool) ? 'required' : '' ?>>
-      <button class="btn btn-primary" type="submit">Hinterlegen</button>
+      <button class="btn btn-primary" type="submit"><i class="bx bx-id-card"></i> Lizenz zuweisen</button>
+      <p class="mt-2 text-xs text-slate-500">Der Platz wird aus dem Lizenzpool Ihrer Organisation belegt.</p>
     </form>
+    <?php else: ?>
+    <p class="mt-3 text-sm text-slate-500">Zurzeit ist keine Lizenz im Pool hinterlegt. Bitte wenden Sie sich an den Administrator.</p>
+    <?php endif; ?>
   <?php else: ?>
     <dl class="mt-3 grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm">
       <dt class="text-slate-500">Schlüssel</dt><dd class="font-mono"><?= $e($lic['key']) ?></dd>

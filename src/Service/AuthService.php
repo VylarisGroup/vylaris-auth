@@ -50,8 +50,9 @@ final class AuthService
         }
         $licensed = $this->license !== null && $this->license->required();
         $licenseKey = LicenseService::normalizeKey($licenseKey);
+        $autoKey = $licenseKey === '';
         if ($licensed && $licenseKey === '' && !$this->license->hasPool()) {
-            $errors[] = 'Bitte geben Sie Ihren Lizenzschlüssel ein.';
+            $errors[] = 'Die Registrierung ist derzeit nicht möglich: Es ist keine Lizenz hinterlegt. Bitte wenden Sie sich an den Administrator.';
         }
         if ($errors) {
             return ['ok' => false, 'errors' => $errors];
@@ -79,7 +80,7 @@ final class AuthService
         $verified = !$this->config->get('security.require_email_verification', true);
         $bound = null;
         try {
-            $id = $this->db->transaction(function () use ($email, $password, $displayName, $verified, $privacyAccepted, $privacyVersion, $licensed, $licenseKey, &$bound): int {
+            $id = $this->db->transaction(function () use ($email, $password, $displayName, $verified, $privacyAccepted, $privacyVersion, $licensed, $licenseKey, $autoKey, &$bound): int {
                 $id = $this->users->create($email, $this->passwords->hash($password), $displayName, $verified);
                 $this->users->assignRole($id, 'user');
                 if ($privacyAccepted) {
@@ -87,8 +88,8 @@ final class AuthService
                 }
                 if ($licensed) {
                     // Belegt den Platz beim Lizenzserver; schlägt das fehl, wird das Konto nicht angelegt.
-                    $this->license->bind($id, $licenseKey);
-                    $bound = [$licenseKey, $this->license->hwid($id)];
+                    $reply = $this->license->bind($id, $licenseKey, $autoKey);
+                    $bound = [$reply->key, $this->license->hwid($id)];
                 }
                 return $id;
             });
@@ -302,6 +303,11 @@ final class AuthService
         $session->forget('mfa_pending_uid');
         $session->forget('mfa_pending_at');
         $session->bindUser($userId);
+        try {
+            $this->license?->refreshIfStale($userId); // Lizenzstatus bei der Anmeldung nachprüfen (ohne Cron-Abhängigkeit)
+        } catch (\Throwable) {
+            // Lizenzprüfung darf die Anmeldung nie verhindern
+        }
         $session->set('auth_time', Clock::now());
         $session->set('amr', $amr);
         $session->set('csrf', bin2hex(random_bytes(32)));

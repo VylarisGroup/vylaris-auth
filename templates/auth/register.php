@@ -10,12 +10,6 @@
     <label class="label">E-Mail
       <input class="input mt-1 w-full" type="email" name="email" value="<?= $e($old['email']) ?>" autocomplete="email" required>
     </label>
-    <?php if (!empty($licenseRequired) && empty($licenseOptional)): ?>
-    <label class="label">Lizenzschlüssel
-      <input class="input mt-1 w-full font-mono" name="license_key" value="<?= $e($old['license_key'] ?? '') ?>" autocomplete="off" spellcheck="false" maxlength="64" placeholder="XX-XXXX-XXXX-XXXX" required>
-      <span class="mt-1 block text-xs text-slate-500">Jedes Konto belegt einen Platz Ihrer Lizenz.</span>
-    </label>
-    <?php endif; ?>
     <label class="label">Passwort
       <input class="input mt-1 w-full" type="password" name="password" autocomplete="new-password" minlength="12" required>
       <span class="mt-1 block text-xs text-slate-500">Mindestens 12 Zeichen. Eine Passphrase ist ideal.</span>

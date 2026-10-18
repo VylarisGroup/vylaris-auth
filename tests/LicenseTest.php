@@ -154,14 +154,19 @@ final class LicenseTest extends TestCase
     public function testRegistrationFormAndWebFlow(): void
     {
         $b = new TestBrowser($this->ctx->app);
-        $this->assertStringContains('name="license_key"', $b->get('/register')->body);
+        $this->assertStringNotContains('name="license_key"', $b->get('/register')->body, 'Registrierung fragt keinen Schlüssel mehr ab');
+        // Ohne Pool ist keine Registrierung möglich
+        $r = $b->post('/register', ['name' => 'Web Person', 'email' => 'web@example.org', 'password' => self::PW, 'accept_privacy' => '1']);
+        $this->assertSame(422, $r->status);
+        $this->assertStringContains('keine Lizenz hinterlegt', $r->body);
+        $this->assertNull($this->user('web@example.org'));
+        // Ein mitgeschickter Schlüssel wird ignoriert (nur der Pool zählt)
         $r = $b->post('/register', ['name' => 'Web Person', 'email' => 'web@example.org', 'password' => self::PW, 'accept_privacy' => '1', 'license_key' => 'VA-AAAA-BBBB-CCCC']);
+        $this->assertSame(422, $r->status);
+        $this->ctx->app->license->addToPool('VA-AAAA-BBBB-CCCC', null, false);
+        $r = $b->post('/register', ['name' => 'Web Person', 'email' => 'web@example.org', 'password' => self::PW, 'accept_privacy' => '1']);
         $this->assertSame(200, $r->status);
         $this->assertNotNull($this->user('web@example.org'));
-        $r = $b->post('/register', ['name' => 'Web Zwei', 'email' => 'web2@example.org', 'password' => self::PW, 'accept_privacy' => '1', 'license_key' => 'VA-NOPE-NOPE-NOPE']);
-        $this->assertSame(422, $r->status);
-        $this->assertStringContains('unbekannt', $r->body);
-        $this->assertStringContains('VA-NOPE-NOPE-NOPE', $r->body, 'Eingabe bleibt erhalten');
     }
 
     // ------------------------------------------------------------------ Signaturprüfung
@@ -282,10 +287,21 @@ final class LicenseTest extends TestCase
     {
         $id = $this->licensed('r@example.org', 'VA-AAAA-BBBB-CCCC');
         $this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices'] = [];
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['maxDevices'] = 0; // kein Platz mehr: Neu-Belegen scheitert
         Clock::advance(4000);
         $this->ctx->app->license->refreshStale();
         $this->assertFalse($this->ctx->app->license->allows($id, 'passkeys'));
         $this->assertSame('NOT_ACTIVATED', $this->ctx->app->license->state($id)['code']);
+    }
+
+    public function testResetSeatIsReclaimedAutomaticallyOnSameKey(): void
+    {
+        $id = $this->licensed('r2@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices'] = [];
+        Clock::advance(4000);
+        $this->ctx->app->license->refreshStale();
+        $this->assertTrue($this->ctx->app->license->allows($id, 'passkeys'));
+        $this->assertSame(1, count($this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices']));
     }
 
     // ------------------------------------------------------------------ Durchsetzung in den Controllern
@@ -354,7 +370,7 @@ final class LicenseTest extends TestCase
         $a = $this->ctx->app;
         $admin = $a->users->create('ad@example.org', $a->passwords->hash(self::PW), 'Ad', true);
         $a->users->assignRole($admin, 'admin');
-        $this->assertThrows(\InvalidArgumentException::class, fn () => $a->admin->createUser($admin, 'n1@example.org', 'Neu Eins', ''));
+        $this->assertThrows(\InvalidArgumentException::class, fn () => $a->admin->createUser($admin, 'n1@example.org', 'Neu Eins', ''), 'ohne Pool kein Konto');
         $this->assertThrows(\InvalidArgumentException::class, fn () => $a->admin->createUser($admin, 'n1@example.org', 'Neu Eins', 'VA-UNKNOWN-0001'));
         $this->assertNull($this->user('n1@example.org'));
         $id = $a->admin->createUser($admin, 'n1@example.org', 'Neu Eins', 'VA-AAAA-BBBB-CCCC');
@@ -362,20 +378,22 @@ final class LicenseTest extends TestCase
         $this->assertTrue($a->license->state($id)['valid']);
     }
 
-    public function testLegacyUserCanAttachKeyViaAccountPage(): void
+    public function testLegacyUserGetsLicenseFromPoolViaAccountPage(): void
     {
         $a = $this->ctx->app;
         $a->users->create('legacy@example.org', $a->passwords->hash(self::PW), 'Legacy', true);
         $b = $this->login('legacy@example.org');
-        $this->assertStringContains('Bestandsschutz', $b->get('/account/license')->body);
-        $r = $b->post('/account/license', ['license_key' => 'VA-NOPE-NOPE-NOPE']);
-        $this->assertSame(422, $r->status);
-        $r = $b->post('/account/license', ['license_key' => 'VA-AAAA-BBBB-CCCC']);
+        $page = $b->get('/account/license')->body;
+        $this->assertStringContains('Bestandsschutz', $page);
+        $this->assertStringNotContains('name="license_key"', $page);
+        $this->assertStringContains('keine Lizenz im Pool', $page);
+        $a->license->addToPool('VA-AAAA-BBBB-CCCC', null, false);
+        $r = $b->post('/account/license', ['license_key' => 'VA-NOPE-NOPE-NOPE']); // eigene Eingabe wird ignoriert
         $this->assertSame(302, $r->status);
         $page = $b->get('/account/license')->body;
         $this->assertStringContains('VA-A…CC', $page);
         $this->assertStringNotContains('VA-AAAA-BBBB-CCCC', $page, 'Schlüssel nur maskiert anzeigen');
-        $this->assertSame(409, $b->post('/account/license', ['license_key' => 'VA-AAAA-BBBB-CCCC'])->status);
+        $this->assertSame(409, $b->post('/account/license')->status);
     }
 
     // ------------------------------------------------------------------ Löschung, Cron, Protokolle
@@ -482,27 +500,180 @@ final class LicenseTest extends TestCase
         $this->assertSame(0, count($this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices']));
     }
 
-    public function testKeyEnteredByAdminWhenCreatingUserIsRememberedForNextOnes(): void
+    public function testAdminPicksLicenseFromPoolWhenCreatingUser(): void
     {
-        $a = $this->ctx->app;
-        $admin = $a->users->create('ad2@example.org', $a->passwords->hash(self::PW), 'Ad', true);
-        $a->users->assignRole($admin, 'admin');
-        $this->assertThrows(\InvalidArgumentException::class, fn () => $a->admin->createUser($admin, 'x1@example.org', 'Ex Eins', ''), 'ohne Pool und ohne Schlüssel nicht möglich');
-        $a->admin->createUser($admin, 'x1@example.org', 'Ex Eins', 'VA-AAAA-BBBB-CCCC');
-        $this->assertSame(1, count($a->license->pool()));
-        $id = $a->admin->createUser($admin, 'x2@example.org', 'Ex Zwei', '');
-        $this->assertSame('VA-AAAA-BBBB-CCCC', $a->license->state($id)['key']);
-        $this->assertThrows(\InvalidArgumentException::class, fn () => $a->admin->createUser($admin, 'x3@example.org', 'Ex Drei', ''), 'Plätze aufgebraucht');
+        $this->srv->add('VA-DDDD-EEEE-FFFF', 3, ['social_login']);
+        $b = $this->keylessAdmin();
+        $page = $b->get('/admin/users')->body;
+        $this->assertStringContains('Kein Lizenzschlüssel im Pool', $page);
+        $this->assertStringNotContains('name="license_key"', $page, 'kein Schlüsselfeld bei der Nutzererstellung');
+        $b->post('/admin/license/keys', ['license_key' => 'VA-AAAA-BBBB-CCCC']);
+        $b->post('/admin/license/keys', ['license_key' => 'VA-DDDD-EEEE-FFFF']);
+        $pool = $this->ctx->app->license->pool();
+        $page = $b->get('/admin/users')->body;
+        $this->assertStringContains('name="license_pool_id"', $page);
+        $this->assertStringContains('Automatisch', $page);
+        $this->assertStringContains('2 von 2 Plätzen frei', $page);
+        $this->assertStringNotContains('VA-DDDD-EEEE-FFFF', $page, 'nur maskiert');
+        $this->assertStringContains('name="license_pool_id"', $b->get('/admin/users/new')->body);
+
+        // gezielt den zweiten Schlüssel wählen
+        $b->post('/admin/users', ['email' => 'sel@example.org', 'name' => 'Sel Ect', 'license_pool_id' => (string) $pool[1]['id']]);
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $this->ctx->app->license->state((int) $this->user('sel@example.org')['id'])['key']);
+        // automatisch = erster mit freiem Platz
+        $b->post('/admin/users', ['email' => 'auto@example.org', 'name' => 'Au To', 'license_pool_id' => '']);
+        $this->assertSame('VA-AAAA-BBBB-CCCC', $this->ctx->app->license->state((int) $this->user('auto@example.org')['id'])['key']);
+        // unbekannte Pool-ID wird abgelehnt, der eingegebene Schlüssel ignoriert
+        $b->post('/admin/users', ['email' => 'bad@example.org', 'name' => 'Ba Ad', 'license_pool_id' => '9999', 'license_key' => 'VA-AAAA-BBBB-CCCC']);
+        $this->assertNull($this->user('bad@example.org'));
+        // gewählter, aber voller Schlüssel: kein Konto, kein stilles Ausweichen
+        $this->srv->licenses['VA-DDDD-EEEE-FFFF']['maxDevices'] = 1;
+        $b->post('/admin/users', ['email' => 'full@example.org', 'name' => 'Fu Ll', 'license_pool_id' => (string) $pool[1]['id']]);
+        $this->assertNull($this->user('full@example.org'));
     }
 
-    public function testRegistrationDoesNotStoreKeysAndFormHidesFieldOnlyWithPool(): void
+    public function testRegistrationNeverStoresOrAsksForKeys(): void
     {
-        $this->assertTrue($this->register('solo@example.org', 'VA-AAAA-BBBB-CCCC')['ok']);
-        $this->assertSame([], $this->ctx->app->license->pool(), 'Schlüssel aus einer öffentlichen Registrierung werden nicht hinterlegt');
-        $anon = new TestBrowser($this->ctx->app);
-        $this->assertStringContains('name="license_key"', $anon->get('/register')->body);
         $this->ctx->app->license->addToPool('VA-AAAA-BBBB-CCCC', null, false);
+        $anon = new TestBrowser($this->ctx->app);
         $this->assertStringNotContains('name="license_key"', $anon->get('/register')->body);
+        $this->assertTrue($this->register('solo@example.org', '')['ok']);
+        $this->assertSame(1, count($this->ctx->app->license->pool()));
+    }
+
+    // ------------------------------------------------------------------ Gegenprüfung & automatische Umstufung
+
+    private function twoKeys(): void
+    {
+        $this->srv->add('VA-DDDD-EEEE-FFFF', 3, ['social_login', 'passkeys', 'whitelabel']);
+        $this->ctx->app->license->addToPool('VA-AAAA-BBBB-CCCC', null, false);
+        $this->ctx->app->license->addToPool('VA-DDDD-EEEE-FFFF', null, false);
+    }
+
+    public function testPoolKeysAreCheckedAgainstServerAndStatusIsStored(): void
+    {
+        $this->twoKeys();
+        $this->assertSame(2, $this->ctx->app->license->refreshPool(true));
+        $pool = $this->ctx->app->license->pool();
+        $this->assertSame(1, (int) $pool[0]['valid']);
+        $this->assertSame('Pro', $pool[0]['plan']);
+        $this->assertSame(2, (int) $pool[0]['max_devices']);
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['status'] = 'blocked';
+        $this->ctx->app->license->refreshPool(true);
+        $pool = $this->ctx->app->license->pool();
+        $this->assertSame(0, (int) $pool[0]['valid']);
+        $this->assertSame('BLOCKED', $pool[0]['code']);
+        $opts = $this->ctx->app->license->poolOptions();
+        $this->assertFalse($opts[0]['usable']);
+        $this->assertTrue($opts[1]['usable']);
+        // Admin-Seite zeigt den Status, Cron-Lauf prüft den Pool ebenfalls
+        $b = $this->keylessAdmin();
+        $this->assertStringContains('gesperrt', $b->get('/admin/license')->body);
+    }
+
+    public function testUsersOnInvalidLicenseMoveToNextAvailableKey(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $u1 = $this->licensed('m1@example.org', 'VA-AAAA-BBBB-CCCC');
+        $u2 = $this->licensed('m2@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['expires'] = Clock::now() + 100;
+        Clock::advance(4000); // Lizenz ist abgelaufen
+        $a->license->refreshStale();
+        foreach ([$u1, $u2] as $id) {
+            $s = $a->license->state($id);
+            $this->assertSame('VA-DDDD-EEEE-FFFF', $s['key']);
+            $this->assertTrue($s['valid']);
+            $this->assertTrue($a->license->allows($id, 'whitelabel'), 'Funktionen der neuen Lizenz gelten');
+        }
+        $this->assertSame(2, count($this->srv->licenses['VA-DDDD-EEEE-FFFF']['devices']));
+        $released = array_filter($this->srv->calls, static fn (string $c) => str_starts_with($c, 'deactivate:VA-AAAA-BBBB-CCCC'));
+        $this->assertSame(2, count($released), 'alter Platz wird beim Lizenzserver freigegeben');
+        $this->assertSame(2, (int) $this->ctx->db->scalar("SELECT COUNT(*) FROM audit_log WHERE event = 'license.reassigned'"));
+        $this->assertSame(0, $a->license->invalidUsers());
+    }
+
+    public function testNoFreeKeyKeepsUserInvalidUntilNewKeyIsAdded(): void
+    {
+        $a = $this->ctx->app;
+        $a->license->addToPool('VA-AAAA-BBBB-CCCC', null, false);
+        $id = $this->licensed('w@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['status'] = 'blocked';
+        Clock::advance(4000);
+        $a->license->refreshStale();
+        $this->assertFalse($a->license->state($id)['valid']);
+        $this->assertSame(1, $a->license->invalidUsers());
+        // neuer Schlüssel im Pool -> sofort umgestuft
+        $this->srv->add('VA-DDDD-EEEE-FFFF', 3, ['passkeys']);
+        $a->license->addToPool('VA-DDDD-EEEE-FFFF', null);
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $a->license->state($id)['key']);
+        $this->assertTrue($a->license->state($id)['valid']);
+        $this->assertSame(0, $a->license->invalidUsers());
+    }
+
+    public function testFullKeysAreSkippedWhenReassigning(): void
+    {
+        $a = $this->ctx->app;
+        $this->srv->add('VA-DDDD-EEEE-FFFF', 1, ['passkeys']);
+        $this->srv->add('VA-GGGG-HHHH-IIII', 5, ['passkeys']);
+        foreach (['VA-AAAA-BBBB-CCCC', 'VA-DDDD-EEEE-FFFF', 'VA-GGGG-HHHH-IIII'] as $k) {
+            $a->license->addToPool($k, null, false);
+        }
+        $this->licensed('f0@example.org', 'VA-DDDD-EEEE-FFFF'); // belegt den einzigen Platz
+        $id = $this->licensed('f1@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['status'] = 'blocked';
+        Clock::advance(4000);
+        $a->license->refreshStale();
+        $this->assertSame('VA-GGGG-HHHH-IIII', $a->license->state($id)['key'], 'voller Schlüssel wird übersprungen');
+    }
+
+    public function testServerOutageDoesNotReassignOrInvalidate(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $id = $this->licensed('o@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->down = true;
+        Clock::advance(4000);
+        $a->license->refreshStale();
+        $this->assertSame('VA-AAAA-BBBB-CCCC', $a->license->state($id)['key']);
+        $this->assertTrue($a->license->state($id)['valid'], 'innerhalb der Karenzzeit bleibt der letzte Stand');
+    }
+
+    public function testLoginRechecksStaleLicenseWithoutCron(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $id = $this->licensed('l@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['status'] = 'blocked';
+        Clock::advance(4000);
+        $this->login('l@example.org'); // kein Cron-Lauf, nur die Anmeldung
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $a->license->state($id)['key']);
+    }
+
+    public function testLoginDuringServerOutageIsNotBlockedRepeatedly(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $this->licensed('d@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->srv->down = true;
+        Clock::advance(4000);
+        $this->login('d@example.org');
+        $calls = count($this->srv->calls);
+        $this->login('d@example.org');
+        $this->assertSame($calls, count($this->srv->calls), 'nach einem Ausfall wird kurz nicht erneut angefragt');
+    }
+
+    public function testBindFallsBackToNextPoolKeyWhenSeatIsTakenInBetween(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $id = $a->users->create('race@example.org', $a->passwords->hash(self::PW), 'Race', true);
+        $this->srv->licenses['VA-AAAA-BBBB-CCCC']['maxDevices'] = 0; // zwischen Vorabprüfung und Belegung voll geworden
+        $r = $a->license->bind($id, 'VA-AAAA-BBBB-CCCC', true);
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $r->key);
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $a->license->state($id)['key']);
+        $id2 = $a->users->create('race2@example.org', $a->passwords->hash(self::PW), 'Race2', true);
+        $this->assertThrows(LicenseException::class, fn () => $a->license->bind($id2, 'VA-AAAA-BBBB-CCCC', false), 'ohne Fallback (gezielte Wahl) kein stilles Ausweichen');
     }
 
     public function testPoolManagementIsAdminOnlyValidatedAndRemovable(): void
@@ -512,7 +683,7 @@ final class LicenseTest extends TestCase
         $this->assertSame([], $this->ctx->app->license->pool(), 'unbekannter Schlüssel wird nicht hinterlegt');
         $b->post('/admin/license/keys', ['license_key' => 'VA-AAAA-BBBB-CCCC']);
         $page = $b->get('/admin/license')->body;
-        $this->assertStringContains('Hinterlegte Lizenzschlüssel', $page);
+        $this->assertStringContains('Lizenzpool', $page);
         $this->assertStringContains('VA-A…CC', $page);
         $this->assertStringNotContains('VA-AAAA-BBBB-CCCC', $page, 'Schlüssel nur maskiert anzeigen');
         // normale Nutzer und Anonyme dürfen nichts

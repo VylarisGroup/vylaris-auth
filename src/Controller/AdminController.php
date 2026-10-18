@@ -13,7 +13,7 @@ final class AdminController extends BaseController
     {
         $r->get('/admin', fn (Request $q) => $this->guard($q, fn ($u) => $this->dashboard($u)));
         $r->post('/admin/changelog/seen', fn (Request $q) => $this->guard($q, fn ($u) => $this->changelogSeen($u)));
-        $r->get('/admin/users/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->render('admin/wizard_user', ['licenseRequired' => $this->app->license->required(), 'licenseOptional' => $this->app->license->hasPool()])));
+        $r->get('/admin/users/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->render('admin/wizard_user', ['licenseRequired' => $this->app->license->required(), 'poolOptions' => $this->app->license->poolOptions()])));
         $r->get('/admin/apps/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->denyFeature($u, 'oidc_apps') ?? $this->render('admin/wizard_app')));
         $r->get('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->users($q, $u)));
         $r->post('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->createUser($q, $u)));
@@ -67,14 +67,20 @@ final class AdminController extends BaseController
         $page = max(1, (int) $q->str('page', '1'));
         return $this->render('admin/users', [
             'users' => $this->app->users->search($term, 50, ($page - 1) * 50),
-            'term' => $term, 'page' => $page, 'licenseRequired' => $this->app->license->required(), 'licenseOptional' => $this->app->license->hasPool(),
+            'term' => $term, 'page' => $page, 'licenseRequired' => $this->app->license->required(), 'poolOptions' => $this->app->license->poolOptions(),
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);
     }
 
     private function createUser(Request $q, array $actor): Response
     {
-        $this->app->admin->createUser((int) $actor['id'], $q->str('email'), $q->str('name'), $q->str('license_key'));
+        // Die Lizenz kommt ausschließlich aus dem Pool: leer = automatisch, sonst die gewählte Pool-Zeile.
+        $poolId = (int) $q->str('license_pool_id');
+        $key = '';
+        if ($poolId > 0) {
+            $key = $this->app->license->poolKey($poolId) ?? throw new \InvalidArgumentException('Die gewählte Lizenz ist nicht (mehr) im Pool.');
+        }
+        $this->app->admin->createUser((int) $actor['id'], $q->str('email'), $q->str('name'), $key);
         $this->app->session()->flash('ok', 'Konto angelegt, Einladung wird per E-Mail versendet.');
         return $this->redirect('/admin/users');
     }

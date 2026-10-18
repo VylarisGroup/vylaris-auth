@@ -6,15 +6,15 @@ VylarisAuth ist lizenzpflichtig: **Jedes Konto belegt einen Platz („Gerät“)
 
 | Situation | Verhalten |
 |---|---|
-| Registrierung | Das Formular verlangt einen Lizenzschlüssel. Vorab `validate` (Schlüssel gültig, Produkt passt, freier Platz), dann wird das Konto angelegt und der Platz per `activate` belegt. Schlägt irgendein Schritt fehl, entsteht kein Konto und kein Platz bleibt belegt. |
+| Registrierung | Das Formular fragt **keinen** Schlüssel ab. Die Lizenz kommt aus dem Lizenzpool (erster Schlüssel mit freiem Platz). Vorab `validate` (gültig, Produkt passt, freier Platz), dann wird das Konto angelegt und der Platz per `activate` belegt. Schlägt irgendein Schritt fehl, entsteht kein Konto und kein Platz bleibt belegt. Ist der Pool leer, ist keine Registrierung möglich. |
 | Gerät/hwid | `vu-` + 32 Hex-Zeichen, HMAC aus Nutzer-ID und `app.secret`. Es gehen **keine** E-Mail-Adressen oder Namen an den Lizenzserver (Anzeigename dort: „Nutzer 42“). |
-| Konto anlegen durch Admin | Der Admin muss einen Schlüssel angeben; das Konto belegt dort einen Platz. |
+| Konto anlegen durch Admin | Kein Schlüssel-Eingabefeld: Der Admin wählt die Lizenz aus dem Pool (Standard „Automatisch“); das Konto belegt dort einen Platz. |
 | Social Login | Legt **keine neuen Konten** mehr an. Bestehende Konten lassen sich weiter verknüpfen. |
-| Bestandskonten | Bleiben ohne Schlüssel nutzbar (Bestandsschutz, kein Platz belegt) und können unter „Konto → Lizenz“ einen Schlüssel hinterlegen. Ihre Funktionen steuert `license.keyless_features` (Standard: alle). Das gilt auch für den im Setup angelegten ersten Superadmin. |
+| Bestandskonten | Bleiben ohne Schlüssel nutzbar (Bestandsschutz, kein Platz belegt) und können unter „Konto → Lizenz“ per Klick eine Lizenz aus dem Pool zuweisen. Ihre Funktionen steuert `license.keyless_features` (Standard: alle). Das gilt auch für den im Setup angelegten ersten Superadmin. |
 | Konto gelöscht (DSGVO, Admin, Inaktivität) | Der Platz wird freigegeben (`deactivate`). Ist der Lizenzserver gerade nicht erreichbar, wird die Freigabe vorgemerkt und vom Cron wiederholt. |
-| Lizenz abgelaufen / gesperrt / Platz im Panel zurückgesetzt | **Nur Neuregistrierungen mit diesem Schlüssel scheitern.** Bestehende Nutzer melden sich weiter an, SSO läuft weiter. Die lizenzabhängigen Funktionen (Scopes) entfallen. |
+| Lizenz abgelaufen / gesperrt / Platz im Panel zurückgesetzt | Bei der nächsten Prüfung wird der Nutzer **automatisch auf den nächsten verfügbaren Pool-Schlüssel umgestuft** (siehe unten). Gibt es keinen, melden sich bestehende Nutzer weiter an, SSO läuft weiter, aber die lizenzabhängigen Funktionen (Scopes) entfallen, bis ein Schlüssel verfügbar ist. |
 | Lizenzserver nicht erreichbar | Neuregistrierung: Fehlermeldung. Bestehende Konten: der zuletzt bestätigte Stand gilt `license.grace_days` Tage (Standard 7); danach entfallen die Scopes (Anmeldung bleibt). |
-| Aktualisierung | `bin/cron.php` prüft Lizenzen per `heartbeat` (frühestens nach `license.refresh_seconds`, Standard 1 h, max. 100 je Lauf) und wiederholt offene Platzfreigaben. Seitenaufrufe lösen keine Netzwerkanfragen aus. Manuell: Admin → Lizenz → „Alle jetzt prüfen“. |
+| Aktualisierung | `bin/cron.php` prüft die Pool-Schlüssel (`validate`) und die Nutzer-Lizenzen (`heartbeat`, frühestens nach `license.refresh_seconds`, Standard 1 h, max. 100 je Lauf), stuft Nutzer mit ungültiger Lizenz um und wiederholt offene Platzfreigaben. Zusätzlich wird beim **Login** der veraltete Lizenzstatus des Nutzers geprüft – die Prüfung hängt also nicht allein vom Cron ab. Nach einem Serverausfall wird 5 Minuten lang nicht erneut angefragt, damit Logins nicht warten. Seitenaufrufe lösen keine Netzwerkanfragen aus. Manuell: Admin → Lizenz → „Alle jetzt prüfen“. |
 
 ## Einrichtung
 
@@ -31,16 +31,28 @@ VylarisAuth ist lizenzpflichtig: **Jedes Konto belegt einen Platz („Gerät“)
 ```
 **Bestehende Installationen:** Migration einspielen (`php bin/migrate.php`); ein `license`-Block ist nicht nötig, die Standardwerte (Lizenzpflicht an) greifen automatisch.
 
-## Schlüssel nur einmal eingeben (Pool)
+## Lizenzpool
 
-Unter **Admin → Lizenz → Hinterlegte Lizenzschlüssel** tragen Sie Ihren Schlüssel einmal ein (er wird beim Lizenzserver geprüft). Danach gilt:
+Unter **Admin → Lizenz → Lizenzpool** tragen Sie Ihre Schlüssel einmal ein (sie werden beim Lizenzserver geprüft). Das ist die **einzige Stelle**, an der Schlüssel eingegeben werden – bei der Registrierung, der Nutzererstellung und im Konto gibt es kein Schlüsselfeld mehr.
 
-* Neue Konten – Registrierung **und** Anlage durch Administratoren – brauchen keinen Schlüssel mehr. Das Schlüsselfeld im Registrierungsformular entfällt.
-* Es wird immer der älteste hinterlegte Schlüssel mit freiem Platz verwendet. Sind alle Plätze belegt, schlägt die Anmeldung neuer Konten mit „Alle Plätze … belegt“ fehl – hinterlegen Sie dann einen weiteren Schlüssel. Wird ein Platz frei (Konto gelöscht), wird er wieder vergeben.
-* Gibt ein Administrator beim Anlegen eines Kontos einen Schlüssel ein, wird er automatisch ebenfalls hinterlegt. Schlüssel aus der öffentlichen Registrierung werden **nicht** hinterlegt.
-* Ist der Lizenzserver nicht erreichbar, scheitert die Anmeldung (es wird nicht auf den nächsten Schlüssel ausgewichen).
-* Bestandskonten ohne Schlüssel können unter Konto → Lizenz das Feld leer lassen und erhalten den hinterlegten Schlüssel.
-* Entfernen eines Schlüssels aus der Liste lässt bestehende Konten unberührt (sie behalten ihren Platz).
+* **Nutzererstellung durch Admins:** Auswahlfeld „Lizenz“ mit den Pool-Schlüsseln (maskiert, mit Plan und freien Plätzen). „Automatisch“ nimmt den ersten Schlüssel mit freiem Platz; ein gezielt gewählter, aber voller Schlüssel führt zu einer Fehlermeldung statt zu stillem Ausweichen.
+* **Registrierung und Konto → Lizenz:** immer „Automatisch“. Wird zwischen Vorabprüfung und Belegung ein Platz anderweitig vergeben, wird der nächste Pool-Schlüssel versucht.
+* Sind alle Plätze belegt, scheitert die Anlage neuer Konten mit „Alle Plätze … belegt“ – hinterlegen Sie dann einen weiteren Schlüssel. Wird ein Platz frei (Konto gelöscht), wird er wieder vergeben.
+* Ist der Lizenzserver nicht erreichbar, scheitert die Anlage (es wird nicht auf den nächsten Schlüssel ausgewichen).
+* Die Pool-Tabelle zeigt Status, Plan, Plätze (laut Lizenzserver), Ablauf und Zeitpunkt der letzten Prüfung.
+* Beim Update werden Schlüssel, die bereits von Konten genutzt werden, automatisch in den Pool übernommen (Migration 007).
+* Entfernen eines Schlüssels lässt bestehende Konten unberührt; sie werden bei ungültiger Lizenz aber nicht mehr auf diesen Schlüssel umgestuft.
+
+## Gegenprüfung und automatische Umstufung
+
+Bei jeder Prüfung (Cron, Login, „Alle jetzt prüfen“) gilt:
+
+1. Jeder Pool-Schlüssel wird beim Lizenzserver geprüft (gültig, Produkt, Ablauf, Plätze) und der Stand gespeichert.
+2. Jeder Nutzer wird per `heartbeat` geprüft. Ist seine Lizenz **abgelaufen, gesperrt, unbekannt, für ein anderes Produkt oder sein Platz zurückgesetzt**, wird er auf den nächsten Pool-Schlüssel mit freiem Platz umgestuft: neuer Platz per `activate`, alter Platz wird freigegeben, Funktionen (Scopes) richten sich ab sofort nach der neuen Lizenz. Wurde nur der Platz im Lizenzpanel zurückgesetzt, wird zuerst derselbe Schlüssel erneut belegt.
+3. Volle oder ungültige Pool-Schlüssel werden übersprungen. Gibt es keinen verfügbaren, bleibt der Nutzer „ungültig“ (Anzeige unter Admin → Lizenz „Ohne gültige Lizenz“) und wird automatisch umgestuft, sobald ein Schlüssel verfügbar wird – etwa wenn Sie einen neuen hinterlegen.
+4. Bei Serverausfall wird nichts umgestuft oder entwertet; es gilt die Karenzzeit (`license.grace_days`).
+
+Jede Umstufung steht im Audit-Log (`license.reassigned`, mit maskierten Schlüsseln).
 
 ## Fehlersuche
 

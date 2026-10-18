@@ -48,8 +48,8 @@ final class LicenseController extends BaseController
             return $this->account($q, ['Zu viele Versuche. Bitte später erneut versuchen.'], 429);
         }
         try {
-            $key = $this->app->license->resolveKey($q->str('license_key')); // leer = hinterlegter Schlüssel
-            $this->app->license->bind($uid, $key);
+            $key = $this->app->license->resolveKey(''); // immer aus dem Pool
+            $this->app->license->bind($uid, $key, true);
         } catch (LicenseException $e) {
             return $this->account($q, [$e->getMessage()], 422);
         }
@@ -72,19 +72,24 @@ final class LicenseController extends BaseController
             'required' => $l->required(), 'configured' => $l->client()->configured(), 'fingerprint' => $l->client()->fingerprint(),
             'product' => $l->client()->product(), 'apiUrl' => $l->client()->baseUrl(),
             'features' => LicenseService::FEATURES, 'seats' => $seats, 'keyless' => $l->keylessUsers(),
-            'pool' => $this->poolRows(),
+            'pool' => $this->poolRows(), 'invalid' => $l->invalidUsers(),
             'releases' => (int) $this->app->db->scalar('SELECT COUNT(*) FROM license_releases'),
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);
     }
 
-    /** Hinterlegte Schlüssel mit belegten Plätzen (nur lokale Daten, kein Netzwerk). */
+    /** Hinterlegte Schlüssel mit Serverstatus (Zwischenspeicher) und lokal belegten Plätzen – kein Netzwerk. */
     private function poolRows(): array
     {
         $rows = [];
         foreach ($this->app->license->pool() as $p) {
-            $u = $this->app->db->one('SELECT COUNT(*) AS seats, MAX(max_devices) AS max_devices, MAX(plan) AS plan FROM user_licenses WHERE license_key = ?', [$p['license_key']]) ?? [];
-            $rows[] = ['id' => (int) $p['id'], 'key' => LicenseService::mask((string) $p['license_key']), 'seats' => (int) ($u['seats'] ?? 0), 'max' => $u['max_devices'] ?? null, 'plan' => $u['plan'] ?? null, 'created_at' => $p['created_at']];
+            $seats = (int) $this->app->db->scalar('SELECT COUNT(*) FROM user_licenses WHERE license_key = ?', [$p['license_key']]);
+            $rows[] = [
+                'id' => (int) $p['id'], 'key' => LicenseService::mask((string) $p['license_key']), 'seats' => $seats,
+                'max' => $p['max_devices'] ?? null, 'devices' => $p['devices'] ?? null, 'plan' => $p['plan'] ?? null,
+                'valid' => isset($p['valid']) && $p['valid'] !== null ? (int) $p['valid'] === 1 : null, 'code' => (string) ($p['code'] ?? ''),
+                'expires_at' => $p['expires_at'] ?? null, 'checked_at' => $p['checked_at'] ?? null, 'created_at' => $p['created_at'],
+            ];
         }
         return $rows;
     }
@@ -101,7 +106,7 @@ final class LicenseController extends BaseController
         }
         try {
             $this->app->license->addToPool($q->str('license_key'), (int) $user['id']);
-            $this->app->session()->flash('ok', 'Lizenzschlüssel hinterlegt. Neue Konten verwenden ihn automatisch, bis alle Plätze belegt sind.');
+            $this->app->session()->flash('ok', 'Lizenzschlüssel hinterlegt und geprüft. Neue Konten können ihn nutzen; Nutzer mit ungültiger Lizenz wurden – soweit möglich – darauf umgestuft.');
         } catch (LicenseException $e) {
             $this->app->session()->flash('err', $e->getMessage());
         }
@@ -129,9 +134,11 @@ final class LicenseController extends BaseController
             $this->app->session()->flash('err', 'Bitte später erneut versuchen.');
             return $this->redirect('/admin/license');
         }
+        $before = $this->app->license->invalidUsers();
         $n = $this->app->license->refreshStale(200, true);
         $this->app->license->retryReleases();
-        $this->app->session()->flash('ok', "$n Lizenz(en) beim Lizenzserver geprüft.");
+        $after = $this->app->license->invalidUsers();
+        $this->app->session()->flash('ok', "$n Nutzer-Lizenz(en) und der Lizenzpool wurden beim Lizenzserver geprüft." . ($before > $after ? ' ' . ($before - $after) . ' Nutzer auf eine andere Lizenz umgestuft.' : '') . ($after > 0 ? " $after Nutzer haben weiterhin keine gültige Lizenz (kein freier Pool-Schlüssel)." : ''));
         return $this->redirect('/admin/license');
     }
 }

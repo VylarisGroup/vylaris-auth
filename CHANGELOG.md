@@ -3,6 +3,11 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.10.0 – 2026-10-18
+- Geändert: Schlüssel werden nur noch im **Lizenzpool** (Admin → Lizenz) eingegeben. Bei der Nutzererstellung wählt der Admin die Lizenz aus dem Pool (oder „Automatisch“); Registrierung und Konto → Lizenz fragen keinen Schlüssel mehr ab. Bereits genutzte Schlüssel werden beim Update automatisch in den Pool übernommen.
+- Neu: Nutzer mit ungültiger Lizenz (abgelaufen, gesperrt, unbekannt, anderes Produkt, Platz zurückgesetzt) werden bei der nächsten Prüfung automatisch auf den nächsten verfügbaren Pool-Schlüssel umgestuft; der alte Platz wird freigegeben. Gibt es keinen, erfolgt die Umstufung sobald ein Schlüssel verfügbar ist.
+- Verbessert: Bessere Gegenprüfung. Pool-Schlüssel werden regelmäßig beim Lizenzserver geprüft (Status, Plan, Plätze, Ablauf in der Pool-Tabelle). Der Lizenzstatus wird zusätzlich beim Login nachgeprüft und hängt nicht mehr allein vom Cron ab. Wird ein Platz zwischen Vorabprüfung und Belegung vergeben, weicht die Anlage auf den nächsten Pool-Schlüssel aus.
+
 ## 1.9.1 – 2026-10-17
 - Geändert: Social Login überspringt jetzt den eigenen zweiten Faktor (TOTP/Passkey); der Anbieter-Login gilt als vollwertig. Der Admin-Bereich verlangt weiterhin einen zweiten Faktor. Wer den alten Ablauf will, setzt in `config/config.php` unter `security` `'social_skips_mfa' => false`.
 

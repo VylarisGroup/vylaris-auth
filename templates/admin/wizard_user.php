@@ -11,9 +11,13 @@
     </fieldset>
     <?php if (!empty($licenseRequired)): ?>
     <fieldset class="wiz-step" data-step="Lizenz">
-      <legend class="wiz-legend">Welcher Lizenzschlüssel gilt?</legend>
-      <label class="text-sm">Lizenzschlüssel<input class="input w-full font-mono" name="license_key" <?= empty($licenseOptional) ? 'required' : '' ?> maxlength="64" autocomplete="off" spellcheck="false" data-label="Lizenzschlüssel"></label>
-      <p class="wiz-hint"><?= !empty($licenseOptional) ? 'Leer lassen, um den hinterlegten Schlüssel zu verwenden. ' : '' ?>Der Schlüssel belegt einen Platz (Gerät) in der Lizenz. Er wird beim Lizenzserver geprüft; ist er ungültig oder voll, wird kein Konto angelegt.</p>
+      <legend class="wiz-legend">Aus welcher Lizenz soll der Platz kommen?</legend>
+      <?php if (!empty($poolOptions)): ?>
+      <label class="text-sm">Lizenz aus dem Pool<?php require __DIR__ . '/../partials/license-select.php'; ?></label>
+      <p class="wiz-hint">Das Konto belegt einen Platz (Gerät) der gewählten Lizenz. „Automatisch“ nimmt die erste mit freiem Platz. Ist sie ungültig oder voll, wird kein Konto angelegt.</p>
+      <?php else: ?>
+      <p class="alert alert-err">Im Lizenzpool ist noch kein Schlüssel hinterlegt. Bitte zuerst unter <a class="link" href="/admin/license">Admin → Lizenz</a> einen Schlüssel eintragen.</p>
+      <?php endif; ?>
     </fieldset>
     <?php endif; ?>
     <fieldset class="wiz-step" data-step="Prüfen" data-summary>
