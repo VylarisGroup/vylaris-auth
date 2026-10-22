@@ -275,6 +275,46 @@ final class LicenseService
         return $n;
     }
 
+    /**
+     * Setzt einen Nutzer auf eine andere Pool-Lizenz: Platz bei der neuen Lizenz belegen, danach den alten Platz freigeben.
+     * Scheitert die neue Belegung (voll, abgelaufen, gesperrt, Server nicht erreichbar), bleibt alles unverändert.
+     * Nutzer ohne Lizenz (Bestandsschutz) bekommen so ihre erste Lizenz.
+     * @throws LicenseException
+     */
+    public function moveUser(int $userId, string $newKey, ?int $actorId = null): LicenseReply
+    {
+        $newKey = self::normalizeKey($newKey);
+        if ((int) $this->db->scalar('SELECT COUNT(*) FROM license_pool WHERE license_key = ?', [$newKey]) === 0) {
+            throw new LicenseException('Diese Lizenz ist nicht im Lizenzpool hinterlegt.', 'NOT_IN_POOL');
+        }
+        $row = $this->row($userId);
+        if ($row === null) {
+            $r = $this->bind($userId, $newKey);
+            $this->audit->log('license.moved', $userId, ['from' => '', 'to' => self::mask($newKey)], $actorId);
+            return $r;
+        }
+        $old = (string) $row['license_key'];
+        $hwid = (string) $row['hwid'];
+        if (strcasecmp($old, $newKey) === 0 && (int) $row['valid'] === 1) {
+            throw new LicenseException('Der Benutzer nutzt diese Lizenz bereits.', 'SAME_KEY');
+        }
+        $r = $this->client->activate($newKey, $hwid, 'Nutzer ' . $userId);
+        $this->touchPool($r);
+        if (!$r->valid) {
+            throw LicenseException::forCode($r->code);
+        }
+        $now = Clock::db();
+        $this->db->update('user_licenses', [
+            'license_key' => $newKey, 'valid' => 1, 'code' => 'OK', 'plan' => $r->plan ?: null, 'features' => json_encode($r->features),
+            'expires_at' => $this->expiry($r), 'max_devices' => $r->maxDevices, 'activated_at' => $now, 'checked_at' => $now, 'ok_at' => $now,
+        ], 'user_id', $userId);
+        if (strcasecmp($old, $newKey) !== 0) {
+            $this->releaseDevice($old, $hwid);
+        }
+        $this->audit->log('license.moved', $userId, ['from' => self::mask($old), 'to' => self::mask($newKey)], $actorId);
+        return $r;
+    }
+
     public function removeFromPool(int $id, int $actorId): void
     {
         $row = $this->db->one('SELECT license_key FROM license_pool WHERE id = ?', [$id]);

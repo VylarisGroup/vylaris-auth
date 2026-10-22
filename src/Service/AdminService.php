@@ -165,6 +165,20 @@ final class AdminService
         return $id;
     }
 
+    /** Setzt ein Konto auf eine andere Lizenz aus dem Pool (neuer Platz, alter Platz wird freigegeben). */
+    public function moveLicense(int $actorId, int $targetId, string $poolKey): void
+    {
+        $this->target($actorId, $targetId);
+        if ($this->license === null || !$this->license->required()) {
+            throw new \InvalidArgumentException('Die Lizenzpflicht ist nicht aktiv.');
+        }
+        try {
+            $this->license->moveUser($targetId, $poolKey, $actorId);
+        } catch (LicenseException $e) {
+            throw new \InvalidArgumentException($e->getMessage());
+        }
+    }
+
     public function stats(): array
     {
         $count = fn (string $sql, array $p = []) => (int) $this->db->scalar($sql, $p);

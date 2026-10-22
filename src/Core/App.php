@@ -173,6 +173,7 @@ final class App
         $this->view->share('csrf', Csrf::token($this->session));
         $this->view->share('navPath', $request->path);
         $this->view->share('assetVer', $this->assetVersion());
+        $this->view->share('iconsCdn', $this->iconsCdn());
         $this->view->share('magicLinkEnabled', $this->auth->magicLinkEnabled());
         $user = $this->auth->currentUser($this->session);
         $this->view->share('currentUser', $user);
@@ -230,6 +231,14 @@ final class App
         return Response::html($this->view->render($template, $data), $status);
     }
 
+    /** Boxicons-CDN (jsDelivr, mit SRI) statt lokaler Kopie; abschaltbar mit ui.icons_cdn = false. */
+    public const ICONS_CDN_HOST = 'https://cdn.jsdelivr.net';
+
+    private function iconsCdn(): bool
+    {
+        return (bool) $this->config->get('ui.icons_cdn', true);
+    }
+
     private function withSecurityHeaders(Response $r, Request $request): Response
     {
         $r->headers += [
@@ -237,7 +246,7 @@ final class App
             'X-Frame-Options' => 'DENY',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
             'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(), publickey-credentials-get=(self), publickey-credentials-create=(self)',
-            'Content-Security-Policy' => "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            'Content-Security-Policy' => "default-src 'self'; script-src 'self'; style-src 'self'" . ($cdn = $this->iconsCdn() ? ' ' . self::ICONS_CDN_HOST : '') . "; img-src 'self' data:; font-src 'self'" . $cdn . "; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
             'Cross-Origin-Opener-Policy' => 'same-origin',
         ];
         if ($request->isSecure() || str_starts_with($this->config->baseUrl(), 'https://')) {

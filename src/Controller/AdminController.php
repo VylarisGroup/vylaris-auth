@@ -19,6 +19,7 @@ final class AdminController extends BaseController
         $r->post('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->createUser($q, $u)));
         $r->get('/admin/users/{id}', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->userDetail((int) $p['id'], $u)));
         $r->post('/admin/users/{id}/action', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->userAction($q, (int) $p['id'], $u)));
+        $r->post('/admin/users/{id}/license', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->moveLicense($q, (int) $p['id'], $u)));
         $r->post('/admin/users/{id}/app-role', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->appRole($q, (int) $p['id'], $u)));
         $r->get('/admin/apps', fn (Request $q) => $this->guard($q, fn ($u) => $this->apps()));
         $r->post('/admin/apps', fn (Request $q) => $this->guard($q, fn ($u) => $this->createApp($q, $u)));
@@ -105,12 +106,42 @@ final class AdminController extends BaseController
             'sessions' => $this->app->sessions->listForUser($id),
             'mfa' => ['totp' => $this->app->mfa->hasTotp($id), 'passkeys' => $this->app->passkeys->count($id)],
             'apps' => $apps,
+            'licRequired' => $this->app->license->required(),
+            'lic' => $this->licenseView($id),
+            'poolOptions' => $this->app->license->poolOptions(),
             'audit' => $this->app->audit->recent(15, null, $id),
             'canManage' => $actorId !== $id && $this->app->policy->canManageUser($actorId, $id),
             'isSuper' => $this->app->policy->isSuperAdmin($actorId),
             'self' => $actorId === $id,
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);
+    }
+
+    private function moveLicense(Request $q, int $id, array $actor): Response
+    {
+        $poolId = (int) $q->str('license_pool_id');
+        $key = $poolId > 0 ? $this->app->license->poolKey($poolId) : null;
+        if ($key === null) {
+            throw new \InvalidArgumentException('Bitte eine Lizenz aus dem Pool auswählen.');
+        }
+        $this->app->admin->moveLicense((int) $actor['id'], $id, $key);
+        $this->app->session()->flash('ok', 'Lizenz gewechselt: Der Platz bei der alten Lizenz wurde freigegeben, bei der neuen belegt.');
+        return $this->redirect('/admin/users/' . $id);
+    }
+
+    /** Lizenzanzeige für die Benutzerseite: maskierter Schlüssel, Status und die Pool-ID der aktuellen Lizenz (falls im Pool). */
+    private function licenseView(int $userId): array
+    {
+        $s = $this->app->license->state($userId);
+        $currentPoolId = 0;
+        foreach ($this->app->license->pool() as $p) {
+            if ($s['key'] !== '' && strcasecmp((string) $p['license_key'], $s['key']) === 0) {
+                $currentPoolId = (int) $p['id'];
+            }
+        }
+        $s['key'] = $s['key'] !== '' ? \Vylaris\License\LicenseService::mask($s['key']) : '';
+        $s['poolId'] = $currentPoolId;
+        return $s;
     }
 
     private function userAction(Request $q, int $id, array $actor): Response

@@ -10,7 +10,11 @@
   <meta name="theme-color" content="<?= $e($brand['primaryHex']) ?>">
   <link rel="icon" href="<?= $e($brand['faviconUrl']) ?>">
   <link rel="stylesheet" href="/assets/app.css?v=<?= $e($assetVer ?? "") ?>">
+  <?php if ($iconsCdn ?? true): ?>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" integrity="sha384-42kyIPf7HDYLkGffmxDhSx/3Z/53wGBs3nD6wEFxsbeDc7rMO6mkYbkAcpRsnMU2" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <?php else: ?>
   <link rel="stylesheet" href="/assets/boxicons/css/boxicons.min.css?v=<?= $e($assetVer ?? "") ?>">
+  <?php endif; ?>
   <link rel="stylesheet" href="<?= $e($brand['themeCssUrl']) ?>">
   <script src="/assets/ui.js?v=<?= $e($assetVer ?? "") ?>"></script>
 </head>

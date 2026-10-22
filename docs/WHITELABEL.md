@@ -26,7 +26,7 @@ Zurücksetzen: *Branding → Auf Standard zurücksetzen* (löscht auch hochgelad
 * Werte liegen in der Tabelle `settings` (`brand.*`), Dateien in `var/branding/` (nicht öffentlich, im Backup mitsichern!).
 * Farben, Rundung und Schrift werden als **CSS-Variablen** über `/brand/theme.css` ausgeliefert. Das Tailwind-CSS (`public/assets/app.css`) referenziert nur diese Variablen – ein Neubau des CSS ist **nie** nötig.
 * `/brand/*` (Theme, Logo, Favicon) ist öffentlich, ohne Sitzung/Cookie, mit ETag und `?v=`-Versionierung (Cache-Busting bei jeder Änderung).
-* Die strenge CSP bleibt erhalten (`script-src 'self'; style-src 'self'`): keine Inline-Styles/-Skripte.
+* Die strenge CSP bleibt erhalten (`script-src 'self'`; `style-src 'self'` plus jsDelivr für Boxicons, abschaltbar mit `ui.icons_cdn`): keine Inline-Styles/-Skripte.
 * Theme-Wahl: Cookie `vtheme` (`light`/`dark`, 1 Jahr, SameSite=Lax, nur Darstellung). Bei „System“ löst ui.js per `prefers-color-scheme` auf; ohne JavaScript gilt dunkel.
 * E-Mails, Passkey-Anzeigename und Authenticator-App-Aussteller übernehmen den Markennamen.
 

@@ -3,6 +3,10 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.11.0 – 2026-10-22
+- Neu: **Lizenz wechseln** in der Nutzerbearbeitung (Admin → Benutzer → Nutzer). Der Admin wählt eine Lizenz aus dem Pool; der Nutzer belegt dort einen Platz und wird erst danach von der alten Lizenz abgemeldet. Schlägt die neue Belegung fehl (voll, gesperrt, abgelaufen, Server nicht erreichbar), bleibt alles unverändert. Konten ohne Lizenz können hier ebenfalls eine zugewiesen bekommen. Jeder Wechsel steht im Audit-Log (`license.moved`).
+- Geändert: Boxicons werden vom CDN (jsDelivr, mit Subresource Integrity) geladen. Die CSP erlaubt dafür `https://cdn.jsdelivr.net` für Styles und Schriften, Skripte bleiben auf `'self'` beschränkt. Mit `'ui' => ['icons_cdn' => false]` in `config/config.php` wird wieder die lokale Kopie verwendet.
+
 ## 1.10.0 – 2026-10-18
 - Geändert: Schlüssel werden nur noch im **Lizenzpool** (Admin → Lizenz) eingegeben. Bei der Nutzererstellung wählt der Admin die Lizenz aus dem Pool (oder „Automatisch“); Registrierung und Konto → Lizenz fragen keinen Schlüssel mehr ab. Bereits genutzte Schlüssel werden beim Update automatisch in den Pool übernommen.
 - Neu: Nutzer mit ungültiger Lizenz (abgelaufen, gesperrt, unbekannt, anderes Produkt, Platz zurückgesetzt) werden bei der nächsten Prüfung automatisch auf den nächsten verfügbaren Pool-Schlüssel umgestuft; der alte Platz wird freigegeben. Gibt es keinen, erfolgt die Umstufung sobald ein Schlüssel verfügbar ist.

@@ -43,6 +43,16 @@ Unter **Admin → Lizenz → Lizenzpool** tragen Sie Ihre Schlüssel einmal ein 
 * Beim Update werden Schlüssel, die bereits von Konten genutzt werden, automatisch in den Pool übernommen (Migration 007).
 * Entfernen eines Schlüssels lässt bestehende Konten unberührt; sie werden bei ungültiger Lizenz aber nicht mehr auf diesen Schlüssel umgestuft.
 
+## Lizenz eines Nutzers wechseln
+
+Auf der Nutzerseite (Admin → Benutzer → Nutzer) gibt es die Karte „Lizenz“ mit der aktuellen Lizenz (maskiert) und einer Auswahl der Pool-Schlüssel; die aktuelle ist markiert, nicht verfügbare (voll, gesperrt, abgelaufen) sind deaktiviert.
+
+1. Der Nutzer belegt einen Platz auf der neuen Lizenz (`activate`), die Prüfung muss gültig sein.
+2. Erst danach wird der alte Platz freigegeben (`deactivate`). Schlägt Schritt 1 fehl, bleibt alles unverändert.
+3. Funktionen (Scopes) richten sich ab sofort nach der neuen Lizenz. Audit-Ereignis `license.moved`.
+
+Ohne bisherige Lizenz (Bestandskonto) wird ein Platz zugewiesen („Lizenz zuweisen“). Dieselbe Lizenz erneut zu wählen wird abgelehnt.
+
 ## Gegenprüfung und automatische Umstufung
 
 Bei jeder Prüfung (Cron, Login, „Alle jetzt prüfen“) gilt:

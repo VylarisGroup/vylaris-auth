@@ -55,6 +55,11 @@ return [
         'trusted_proxies'            => [],   // z. B. ['203.0.113.10'], sonst leer
     ],
 
+    // Oberfläche
+    'ui' => [
+        'icons_cdn' => true,   // Boxicons von cdn.jsdelivr.net (mit SRI) laden; false = lokale Kopie unter public/assets/boxicons (CSP erlaubt dann nur 'self')
+    ],
+
     // Datenschutz (DSGVO) – siehe docs/DATENSCHUTZ.md
     'privacy' => [
         'ip_retention_days'    => 30,    // IP-Adresse/Browser im Audit-Log werden danach entfernt (Ereignis bleibt bis audit_retention_days)

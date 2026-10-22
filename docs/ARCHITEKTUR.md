@@ -92,7 +92,7 @@ Globale Rollen (`superadmin`, `admin`, `user`) und je Anwendung eigene Rollen. R
 
 ## 10. Frontend
 
-TailwindCSS wird einmalig lokal gebaut und als statische `public/assets/app.css` ausgeliefert (kein Node im Produktivbetrieb). Boxicons als lokal gehostete CSS/Font-Dateien. Strenge CSP ohne Inline-Skripte.
+TailwindCSS wird einmalig lokal gebaut und als statische `public/assets/app.css` ausgeliefert (kein Node im Produktivbetrieb). Boxicons werden per CDN (jsDelivr, SRI) geladen; `ui.icons_cdn = false` nutzt die lokale Kopie unter `public/assets/boxicons`. Strenge CSP ohne Inline-Skripte.
 
 ## 11. Hintergrundaufgaben
 

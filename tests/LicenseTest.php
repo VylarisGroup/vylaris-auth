@@ -722,4 +722,108 @@ final class LicenseTest extends TestCase
         $this->assertStringContains('nicht erreichbar', implode(' ', $r['errors']));
         $this->assertNull($this->user('out@example.org'));
     }
+
+    // ------------------------------------------------------------------ Lizenzwechsel auf der Nutzerseite
+
+    private function poolId(string $key): int
+    {
+        foreach ($this->ctx->app->license->pool() as $row) {
+            if ($row['license_key'] === $key) {
+                return (int) $row['id'];
+            }
+        }
+        return 0;
+    }
+
+    public function testAdminMovesUserToOtherPoolLicense(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $id = $this->licensed('mv@example.org', 'VA-AAAA-BBBB-CCCC');
+        $b = $this->keylessAdmin();
+        $page = $b->get('/admin/users/' . $id)->body;
+        $this->assertStringContains('name="license_pool_id"', $page);
+        $this->assertStringContains('(aktuell)', $page);
+        $this->assertStringContains('Lizenz wechseln', $page);
+        $this->assertStringNotContains('VA-DDDD-EEEE-FFFF', $page, 'nur maskiert');
+        $this->assertStringNotContains('Automatisch', $page, 'beim Wechsel gibt es keine Automatik');
+
+        $this->srv->calls = [];
+        $r = $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => (string) $this->poolId('VA-DDDD-EEEE-FFFF')]);
+        $this->assertSame(302, $r->status);
+        $s = $a->license->state($id);
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $s['key']);
+        $this->assertTrue($s['valid']);
+        $this->assertTrue($a->license->allows($id, 'whitelabel'), 'Funktionen der neuen Lizenz gelten');
+        $this->assertSame(1, count($this->srv->licenses['VA-DDDD-EEEE-FFFF']['devices']));
+        $this->assertSame(0, count($this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices']), 'alter Platz freigegeben');
+        $this->assertSame(1, (int) $this->ctx->db->scalar("SELECT COUNT(*) FROM audit_log WHERE event = 'license.moved'"));
+    }
+
+    public function testMoveFailureLeavesEverythingUnchanged(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $this->licensed('keep0@example.org', 'VA-DDDD-EEEE-FFFF');
+        $id = $this->licensed('keep@example.org', 'VA-AAAA-BBBB-CCCC');
+        $b = $this->keylessAdmin();
+        $this->srv->licenses['VA-DDDD-EEEE-FFFF']['maxDevices'] = 1; // voll
+        $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => (string) $this->poolId('VA-DDDD-EEEE-FFFF')]);
+        $this->assertSame('VA-AAAA-BBBB-CCCC', $a->license->state($id)['key']);
+        $this->assertSame(1, count($this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices']), 'alter Platz bleibt belegt');
+        $this->srv->licenses['VA-DDDD-EEEE-FFFF']['maxDevices'] = 3;
+        $this->srv->licenses['VA-DDDD-EEEE-FFFF']['status'] = 'blocked';
+        $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => (string) $this->poolId('VA-DDDD-EEEE-FFFF')]);
+        $this->assertSame('VA-AAAA-BBBB-CCCC', $a->license->state($id)['key']);
+        $this->assertSame(0, (int) $this->ctx->db->scalar("SELECT COUNT(*) FROM audit_log WHERE event = 'license.moved'"));
+    }
+
+    public function testMoveRejectsSameKeyUnknownPoolIdAndMissingChoice(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $id = $this->licensed('rej@example.org', 'VA-AAAA-BBBB-CCCC');
+        $b = $this->keylessAdmin();
+        $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => (string) $this->poolId('VA-AAAA-BBBB-CCCC')]);
+        $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => '9999']);
+        $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => '']);
+        $this->assertSame('VA-AAAA-BBBB-CCCC', $a->license->state($id)['key']);
+        $this->assertSame(1, count($this->srv->licenses['VA-AAAA-BBBB-CCCC']['devices']));
+        $this->assertThrows(LicenseException::class, fn () => $a->license->moveUser($id, 'VA-NOT-IN-POOL'), 'Schlüssel außerhalb des Pools');
+        $this->assertThrows(LicenseException::class, fn () => $a->license->moveUser($id, 'VA-AAAA-BBBB-CCCC'));
+    }
+
+    public function testMoveGivesKeylessUserALicense(): void
+    {
+        $a = $this->ctx->app;
+        $this->twoKeys();
+        $id = $a->users->create('nokey@example.org', $a->passwords->hash(self::PW), 'No Key', true);
+        $a->users->assignRole($id, 'user');
+        $b = $this->keylessAdmin();
+        $this->assertStringContains('Lizenz zuweisen', $b->get('/admin/users/' . $id)->body);
+        $b->post('/admin/users/' . $id . '/license', ['license_pool_id' => (string) $this->poolId('VA-DDDD-EEEE-FFFF')]);
+        $this->assertFalse($a->license->state($id)['keyless']);
+        $this->assertSame('VA-DDDD-EEEE-FFFF', $a->license->state($id)['key']);
+        $this->assertSame(1, count($this->srv->licenses['VA-DDDD-EEEE-FFFF']['devices']));
+    }
+
+    public function testMoveIsAdminOnly(): void
+    {
+        $this->twoKeys();
+        $id = $this->licensed('victim@example.org', 'VA-AAAA-BBBB-CCCC');
+        $this->licensed('plain2@example.org', 'VA-AAAA-BBBB-CCCC');
+        $u = $this->login('plain2@example.org');
+        $this->assertSame(403, $u->post('/admin/users/' . $id . '/license', ['license_pool_id' => (string) $this->poolId('VA-DDDD-EEEE-FFFF')])->status);
+        $this->assertSame('VA-AAAA-BBBB-CCCC', $this->ctx->app->license->state($id)['key']);
+    }
+
+    public function testBoxiconsComeFromCdnWithSriAndCspAllowsIt(): void
+    {
+        $anon = new TestBrowser($this->ctx->app);
+        $r = $anon->get('/login');
+        $this->assertStringContains('https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css', $r->body);
+        $this->assertStringContains('integrity="sha384-', $r->body);
+        $this->assertStringContains("font-src 'self' https://cdn.jsdelivr.net", $r->headers['Content-Security-Policy']);
+        $this->assertStringNotContains("script-src 'self' https", $r->headers['Content-Security-Policy']);
+    }
 }
