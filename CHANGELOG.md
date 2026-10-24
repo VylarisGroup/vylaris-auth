@@ -3,6 +3,9 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 1.12.0 – 2026-10-24
+- Neu: Am Ende jeder Seitenleiste (Administration und Mein Konto) steht dezent „powered by VylarisAuth“ mit Link auf https://vylaris.ch. Der Hinweis ist nicht konfigurierbar: Er hat kein Branding-Feld, fehlt er in einem angepassten Template, wird er vom System ergänzt, seine Darstellung steht mit `!important` am Ende des Theme-CSS, und eigenes CSS, das ihn oder die Seitenleiste ausblendet, wird beim Speichern abgelehnt.
+
 ## 1.11.0 – 2026-10-22
 - Neu: **Lizenz wechseln** in der Nutzerbearbeitung (Admin → Benutzer → Nutzer). Der Admin wählt eine Lizenz aus dem Pool; der Nutzer belegt dort einen Platz und wird erst danach von der alten Lizenz abgemeldet. Schlägt die neue Belegung fehl (voll, gesperrt, abgelaufen, Server nicht erreichbar), bleibt alles unverändert. Konten ohne Lizenz können hier ebenfalls eine zugewiesen bekommen. Jeder Wechsel steht im Audit-Log (`license.moved`).
 - Geändert: Boxicons werden vom CDN (jsDelivr, mit Subresource Integrity) geladen. Die CSP erlaubt dafür `https://cdn.jsdelivr.net` für Styles und Schriften, Skripte bleiben auf `'self'` beschränkt. Mit `'ui' => ['icons_cdn' => false]` in `config/config.php` wird wieder die lokale Kopie verwendet.

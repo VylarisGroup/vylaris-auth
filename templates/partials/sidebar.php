@@ -52,4 +52,5 @@ foreach ($hrefs as $h) {
     <?php endif; ?>
   <?php endforeach; ?>
   </nav>
+  <?= \Vylaris\Core\Watermark::html() ?>
 </details>

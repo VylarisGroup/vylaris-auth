@@ -47,3 +47,7 @@ Zurücksetzen: *Branding → Auf Standard zurücksetzen* (löscht auch hochgelad
 * Eigene Schriftarten (Webfonts) werden nicht hochgeladen; die Schriftwahl nutzt Systemschriften (Inter nur, wenn lokal installiert), damit keine externen Fonts nötig sind.
 * Eigenes CSS kann das Layout beschädigen – im Zweifel *Zurücksetzen*.
 * Per CSS-Variablen anpassbare Klassen: `--brand-50…950`, `--accent-50…950`, `--n-50…950`, `--r-lg/xl/2xl`, `--font-sans`.
+
+## Herkunftshinweis
+
+Am Ende der Seitenleiste steht „powered by VylarisAuth“ (Link auf https://vylaris.ch). Er gehört zum Produkt und lässt sich weder im Branding noch per eigenem CSS ändern oder ausblenden (`src/Core/Watermark.php`). Updates stellen ihn bei Änderungen an `src/` und `templates/` wieder her.

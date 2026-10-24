@@ -449,7 +449,7 @@ final class BrandingService
         if ($this->get('custom_css') !== '') {
             $out .= "/* Eigenes CSS */\n" . $this->get('custom_css') . "\n";
         }
-        return $out;
+        return $out . \Vylaris\Core\Watermark::css();
     }
 
     /** @return array<string,string> Stufe => "r g b" */
@@ -509,6 +509,9 @@ final class BrandingService
     {
         if (preg_match('/@import|<\/?style|<\/?script|expression\s*\(|javascript:|behavior\s*:|-moz-binding/i', $css)) {
             return '@import, Skripte und veraltete Konstrukte sind nicht erlaubt.';
+        }
+        if (\Vylaris\Core\Watermark::touchesCss($css)) {
+            return 'Der Herkunftshinweis „powered by VylarisAuth“ und die Seitenleiste können nicht per CSS verändert werden.';
         }
         if (preg_match('/url\(\s*[\'"]?\s*(?:https?:|\/\/|ftp:)/i', $css)) {
             return 'Externe URLs sind nicht erlaubt (nur eigene Pfade oder data:-URIs).';

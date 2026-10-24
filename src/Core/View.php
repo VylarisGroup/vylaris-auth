@@ -26,7 +26,7 @@ final class View
         if ($layout === null) {
             return $content;
         }
-        return $this->capture($layout, ['content' => $content] + $data);
+        return Watermark::ensure($this->capture($layout, ['content' => $content] + $data));
     }
 
     private function capture(string $template, array $data): string

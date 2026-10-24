@@ -101,4 +101,39 @@ final class UiTest extends TestCase
             $this->assertSame(302, $anon->get($p)->status, $p);
         }
     }
+
+    public function testSidebarShowsUnchangeableWatermark(): void
+    {
+        $ctx = $this->ctx();
+        $wm = \Vylaris\Core\Watermark::html();
+        $this->assertStringContains('powered by VylarisAuth', $wm);
+        $this->assertStringContains('href="https://vylaris.ch"', $wm);
+        foreach ([['admin@example.org', '/admin/apps'], ['user@example.org', '/account']] as [$mail, $path]) {
+            $page = $this->login($ctx, $mail)->get($path)->body;
+            $this->assertStringContains($wm, $page, $path);
+            $this->assertSame(1, substr_count($page, 'data-vy-wm'), 'genau einmal, in der Seitenleiste');
+        }
+        $this->assertStringNotContains('data-vy-wm', (new TestBrowser($ctx->app))->get('/login')->body, 'nur in der Seitenleiste');
+        // Wurde das Template verändert, ergänzt das System den Hinweis trotzdem.
+        $page = '<html><body><details class="sidebar"><nav></nav></details></body></html>';
+        $fixed = \Vylaris\Core\Watermark::ensure($page);
+        $this->assertStringContains(\Vylaris\Core\Watermark::html(true), $fixed);
+        $this->assertSame($fixed, \Vylaris\Core\Watermark::ensure($fixed), 'idempotent');
+        $this->assertSame('<p>x</p>', \Vylaris\Core\Watermark::ensure('<p>x</p>'), 'Seiten ohne Seitenleiste bleiben unberührt');
+        // Eine manipulierte Variante (Link entfernt) wird ebenfalls ergänzt.
+        $tampered = '<details class="sidebar"><p class="vy-wm" data-vy-wm="1">powered by VylarisAuth</p></details></body>';
+        $this->assertStringContains('https://vylaris.ch', \Vylaris\Core\Watermark::ensure($tampered));
+    }
+
+    public function testWatermarkStylesComeLastAndCannotBeTargetedByCustomCss(): void
+    {
+        $ctx = $this->ctx();
+        $css = (new TestBrowser($ctx->app))->get('/brand/theme.css')->body;
+        $this->assertStringContains('Herkunftshinweis', $css);
+        $this->assertStringContains('display:block!important', $css);
+        foreach (['.vy-wm{display:none}', 'a[href*="vylaris"]{display:none}', '.sidebar > p:last-child{display:none}', '.sidebar{display:none}', '[data-vy-wm]{opacity:0}'] as $bad) {
+            $this->assertTrue(\Vylaris\Core\Watermark::touchesCss($bad), $bad);
+        }
+        $this->assertFalse(\Vylaris\Core\Watermark::touchesCss('.card{border-width:2px}'));
+    }
 }
