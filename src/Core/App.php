@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Vylaris\Core;
 
 use Vylaris\Branding\BrandingService;
-use Vylaris\License\LicenseService;
 use Vylaris\Update\{GithubSource, UpdateException, UpdateSource, Updater};
 use Vylaris\Controller\{AccountController, AuthController};
 use Vylaris\Oidc\{ClaimsService, ClientService, KeyService, OAuthServer};
@@ -37,7 +36,6 @@ final class App
     public readonly SocialService $social;
     public readonly BrandingService $brand;
     public readonly PrivacyService $privacy;
-    public readonly LicenseService $license;
     public readonly Updater $updater;
     public readonly \Vylaris\Update\Changelog $changelog;
     public readonly View $view;
@@ -59,7 +57,6 @@ final class App
         private string $root,
         ?HttpClient $http = null,
         ?UpdateSource $updateSource = null,
-        ?\Vylaris\License\LicenseClient $licenseClient = null,
     ) {
         $this->brand = new BrandingService($db, $config, $root);
         // Laufzeit-Overrides aus dem Branding: Absendername und Passkey-Anzeigename folgen dem Markennamen.
@@ -76,20 +73,19 @@ final class App
         $this->mailer = new Mailer($db, $transport, $this->brand);
         $this->audit = new AuditLogger($db);
         $http ??= new CurlHttpClient();
-        $this->license = new LicenseService($db, $config, $http, $this->limiter, $this->audit, $licenseClient);
         $this->sessions = new SessionService($db);
-        $this->auth = new AuthService($db, $config, $this->users, $this->passwords, $this->tokens, $this->limiter, $this->mailer, $this->audit, $this->sessions, $this->license);
+        $this->auth = new AuthService($db, $config, $this->users, $this->passwords, $this->tokens, $this->limiter, $this->mailer, $this->audit, $this->sessions);
         $this->policy = new Policy($this->users);
         $this->totp = new TotpService();
         $this->mfa = new MfaService($db, $config, $this->totp, $this->limiter, $this->audit);
         $this->passkeys = new PasskeyService($db, $config, $this->users, new Verifier(), $this->mfa, $this->audit);
-        $this->admin = new AdminService($db, $config, $this->users, $this->policy, $this->sessions, $this->mfa, $this->passwords, $this->tokens, $this->mailer, $this->audit, $this->license);
+        $this->admin = new AdminService($db, $config, $this->users, $this->policy, $this->sessions, $this->mfa, $this->passwords, $this->tokens, $this->mailer, $this->audit);
         $this->clients = new ClientService($db, $this->audit, $this->sessions);
         $this->keys = new KeyService($db, $config);
         $this->claims = new ClaimsService($this->clients, $config->secretKey());
         $this->oauth = new OAuthServer($db, $config, $this->clients, $this->keys, $this->claims, $this->sessions, $this->audit);
         $this->social = new SocialService($db, $config, $http, $this->users, $this->passwords, $this->audit);
-        $this->privacy = new PrivacyService($db, $config, $this->users, $this->policy, $this->mailer, $this->audit, $this->brand, $this->license);
+        $this->privacy = new PrivacyService($db, $config, $this->users, $this->policy, $this->mailer, $this->audit, $this->brand);
         $repo = trim((string) $config->get('update.repo', GithubSource::DEFAULT_REPO));
         if ($updateSource === null && $repo !== '' && GithubSource::validRepo($repo)) {
             $updateSource = new GithubSource($repo, (string) $config->get('update.token', ''));

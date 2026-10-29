@@ -23,7 +23,6 @@
       <legend class="wiz-legend">Wie soll der Anbieter genutzt werden?</legend>
       <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" value="1" data-label="Sofort aktiv"> sofort aktivieren</label>
       <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="allow_signup" value="1" checked data-label="Registrierung erlaubt"> Registrierung über diesen Anbieter erlauben</label>
-      <p class="wiz-hint">Neue Konten über Social Login sind nur möglich, wenn keine Lizenzpflicht besteht; bei Lizenzpflicht dient der Anbieter nur dem Anmelden und Verknüpfen.</p>
     </fieldset>
     <fieldset class="wiz-step" data-step="Prüfen" data-summary>
       <legend class="wiz-legend">Alles richtig?</legend>

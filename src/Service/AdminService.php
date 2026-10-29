@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Vylaris\Service;
 
 use Vylaris\Core\{Clock, Config, Database};
-use Vylaris\License\{LicenseException, LicenseService};
 use Vylaris\Repository\UserRepository;
 use Vylaris\Security\Policy;
 
@@ -22,7 +21,6 @@ final class AdminService
         private TokenService $tokens,
         private Mailer $mailer,
         private AuditLogger $audit,
-        private ?LicenseService $license = null,
     ) {
     }
 
@@ -113,7 +111,7 @@ final class AdminService
     }
 
     /** Legt ein Konto an und versendet einen Einladungslink zum Setzen des Passworts (3 Tage gültig). */
-    public function createUser(int $actorId, string $email, string $name, string $licenseKey = ''): int
+    public function createUser(int $actorId, string $email, string $name): int
     {
         if (!$this->policy->isAdmin($actorId)) {
             throw new AuthorizationException('Keine Berechtigung.');
@@ -126,57 +124,16 @@ final class AdminService
         if ($this->users->findByEmail($email) !== null) {
             throw new \InvalidArgumentException('Diese E-Mail-Adresse ist bereits vergeben.');
         }
-        $licensed = $this->license !== null && $this->license->required();
-        $licenseKey = LicenseService::normalizeKey($licenseKey);
-        $explicit = false;
-        if ($licensed) {
-            if ($licenseKey === '' && !$this->license->hasPool()) {
-                throw new \InvalidArgumentException('Es ist keine Lizenz im Pool hinterlegt (Admin → Lizenz) – jedes neue Konto belegt einen Platz.');
-            }
-            $explicit = $licenseKey !== '';
-            try {
-                $licenseKey = $this->license->resolveKey($licenseKey);
-            } catch (LicenseException $e) {
-                throw new \InvalidArgumentException($e->getMessage());
-            }
-        }
         // Unbenutzbares Zufallspasswort – der Benutzer setzt sein eigenes über den Einladungslink.
-        $bound = null;
-        try {
-            $id = $this->db->transaction(function () use ($email, $name, $licensed, $licenseKey, $explicit, &$bound): int {
-                $id = $this->users->create($email, $this->passwords->hash(bin2hex(random_bytes(32))), $name, false);
-                $this->users->assignRole($id, 'user');
-                if ($licensed) {
-                    $bound = $this->license->bind($id, $licenseKey, !$explicit)->key;
-                }
-                return $id;
-            });
-        } catch (LicenseException $e) {
-            throw new \InvalidArgumentException($e->getMessage());
-        } catch (\Throwable $e) {
-            if ($bound !== null && isset($id)) {
-                $this->license->releaseDevice($bound, $this->license->hwid($id));
-            }
-            throw $e;
-        }
+        $id = $this->db->transaction(function () use ($email, $name): int {
+            $id = $this->users->create($email, $this->passwords->hash(bin2hex(random_bytes(32))), $name, false);
+            $this->users->assignRole($id, 'user');
+            return $id;
+        });
         $token = $this->tokens->create($id, TokenService::RESET_PASSWORD, 3 * 86400);
         $this->mailer->queue($email, 'Einladung zu {app}', "Für Sie wurde ein {org}-Konto angelegt.\n\nLegen Sie Ihr Passwort fest (3 Tage gültig):\n" . $this->config->baseUrl() . '/password/reset?token=' . $token . "\n");
         $this->audit->log('admin.user_created', $id, [], $actorId);
         return $id;
-    }
-
-    /** Setzt ein Konto auf eine andere Lizenz aus dem Pool (neuer Platz, alter Platz wird freigegeben). */
-    public function moveLicense(int $actorId, int $targetId, string $poolKey): void
-    {
-        $this->target($actorId, $targetId);
-        if ($this->license === null || !$this->license->required()) {
-            throw new \InvalidArgumentException('Die Lizenzpflicht ist nicht aktiv.');
-        }
-        try {
-            $this->license->moveUser($targetId, $poolKey, $actorId);
-        } catch (LicenseException $e) {
-            throw new \InvalidArgumentException($e->getMessage());
-        }
     }
 
     public function stats(): array

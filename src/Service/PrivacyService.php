@@ -5,7 +5,6 @@ namespace Vylaris\Service;
 
 use Vylaris\Branding\BrandingService;
 use Vylaris\Core\{Clock, Config, Database};
-use Vylaris\License\LicenseService;
 use Vylaris\Repository\UserRepository;
 use Vylaris\Security\Policy;
 
@@ -25,7 +24,6 @@ final class PrivacyService
         private Mailer $mailer,
         private AuditLogger $audit,
         private BrandingService $brand,
-        private ?LicenseService $license = null,
     ) {
     }
 
@@ -102,10 +100,9 @@ final class PrivacyService
             throw new PrivacyException($why);
         }
         $email = (string) $user['email'];
-        $seat = $this->license !== null ? $this->db->one('SELECT license_key, hwid FROM user_licenses WHERE user_id = ?', [$userId]) : null;
         $this->db->transaction(function () use ($userId, $email) {
             foreach (['sessions', 'oauth_auth_codes', 'oauth_access_tokens', 'oauth_refresh_tokens', 'user_tokens', 'mfa_totp', 'mfa_recovery_codes',
-                      'webauthn_credentials', 'user_licenses', 'user_roles', 'user_app_roles', 'oauth_consents', 'social_identities'] as $table) {
+                      'webauthn_credentials', 'user_roles', 'user_app_roles', 'oauth_consents', 'social_identities'] as $table) {
                 $this->db->run("DELETE FROM $table WHERE user_id = ?", [$userId]);
             }
             $this->db->run('DELETE FROM mail_queue WHERE to_email = ?', [$email]);
@@ -116,9 +113,6 @@ final class PrivacyService
             $this->db->run("UPDATE audit_log SET details = NULL WHERE details LIKE ? ESCAPE '!'", [$like]);
             $this->db->run('DELETE FROM users WHERE id = ?', [$userId]);
         });
-        if ($seat !== null) {
-            $this->license->releaseDevice($seat['license_key'], $seat['hwid']); // Platz beim Lizenzserver wieder freigeben
-        }
         $this->audit->log('privacy.account_erased', null, ['reason' => $reason, 'ref' => $userId], $actorId);
     }
 

@@ -447,7 +447,7 @@ final class UpdateTest extends TestCase
     {
         $ctx = $this->webCtx();
         $a = $ctx->app;
-        $m = new Maintenance($a->db, $a->mailer, $a->sessions, $a->tokens, $a->limiter, $a->audit, $a->keys, 365, $a->privacy, 30, $a->license, $a->updater);
+        $m = new Maintenance($a->db, $a->mailer, $a->sessions, $a->tokens, $a->limiter, $a->audit, $a->keys, 365, $a->privacy, 30, $a->updater);
         $this->assertSame(1, $m->run()['update_checked']);
         $this->assertSame(0, $m->run()['update_checked'], 'gedrosselt');
         $this->assertSame('9.9.9', $a->updater->updateAvailable()['version']);

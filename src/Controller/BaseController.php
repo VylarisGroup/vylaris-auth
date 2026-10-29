@@ -26,21 +26,6 @@ abstract class BaseController
         }
     }
 
-    /**
-     * Lizenz-Scope prüfen (serverseitig, bei jeder Aktion). Gibt bei fehlender Berechtigung die Fehlerseite (403) zurück, sonst null.
-     */
-    protected function denyFeature(array $user, string $feature): ?Response
-    {
-        if ($this->app->license->allows((int) $user['id'], $feature)) {
-            return null;
-        }
-        $this->app->audit->log('license.feature_denied', (int) $user['id'], ['feature' => $feature, 'path' => $this->app->request()->path]);
-        return $this->render('error', [
-            'title' => 'Nicht in Ihrer Lizenz enthalten',
-            'message' => 'Diese Funktion (' . $feature . ') ist in Ihrer Lizenz nicht enthalten oder die Lizenz ist nicht mehr gültig. Details finden Sie unter „Konto → Lizenz“.',
-        ], 403);
-    }
-
     protected function redirect(string $to): Response
     {
         return Response::redirect($to);

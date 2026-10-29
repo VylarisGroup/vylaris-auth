@@ -9,17 +9,6 @@
       <label class="text-sm">E-Mail-Adresse<input class="input w-full" type="email" name="email" required maxlength="255" data-label="E-Mail" autofocus></label>
       <label class="text-sm">Anzeigename<input class="input w-full" name="name" required maxlength="120" data-label="Name"></label>
     </fieldset>
-    <?php if (!empty($licenseRequired)): ?>
-    <fieldset class="wiz-step" data-step="Lizenz">
-      <legend class="wiz-legend">Aus welcher Lizenz soll der Platz kommen?</legend>
-      <?php if (!empty($poolOptions)): ?>
-      <label class="text-sm">Lizenz aus dem Pool<?php require __DIR__ . '/../partials/license-select.php'; ?></label>
-      <p class="wiz-hint">Das Konto belegt einen Platz (Gerät) der gewählten Lizenz. „Automatisch“ nimmt die erste mit freiem Platz. Ist sie ungültig oder voll, wird kein Konto angelegt.</p>
-      <?php else: ?>
-      <p class="alert alert-err">Im Lizenzpool ist noch kein Schlüssel hinterlegt. Bitte zuerst unter <a class="link" href="/admin/license">Admin → Lizenz</a> einen Schlüssel eintragen.</p>
-      <?php endif; ?>
-    </fieldset>
-    <?php endif; ?>
     <fieldset class="wiz-step" data-step="Prüfen" data-summary>
       <legend class="wiz-legend">Alles richtig?</legend>
       <dl class="wiz-summary" data-wizard-summary></dl>

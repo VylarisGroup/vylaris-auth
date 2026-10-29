@@ -12,7 +12,7 @@ final class UiTest extends TestCase
 
     private function ctx(): object
     {
-        $ctx = Factory::app(['license' => ['required' => false]]);
+        $ctx = Factory::app();
         $a = $ctx->app;
         foreach ([['admin@example.org', 'admin'], ['user@example.org', 'user']] as [$mail, $role]) {
             $id = $a->users->create($mail, $a->passwords->hash(self::PW), 'P ' . $role, true);

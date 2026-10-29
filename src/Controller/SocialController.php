@@ -21,7 +21,7 @@ final class SocialController extends BaseController
         $r->post('/account/social/{provider}/unlink', fn (Request $q, array $p) => $this->unlink($q, $p['provider']));
         $r->get('/admin/social', fn (Request $q) => $this->adminGuard($q, fn () => $this->adminIndex()));
         $r->post('/admin/social', fn (Request $q) => $this->adminGuard($q, fn ($u) => $this->adminSave($q, $u, null)));
-        $r->get('/admin/social/new', fn (Request $q) => $this->adminGuard($q, fn ($u) => $this->denyFeature($u, 'social_login') ?? $this->render('admin/wizard_social', ['types' => SocialService::TYPES])));
+        $r->get('/admin/social/new', fn (Request $q) => $this->adminGuard($q, fn ($u) => $this->render('admin/wizard_social', ['types' => SocialService::TYPES])));
         $r->get('/admin/social/{provider}', fn (Request $q, array $p) => $this->adminGuard($q, fn () => $this->adminEdit($p['provider'])));
         $r->post('/admin/social/{provider}', fn (Request $q, array $p) => $this->adminGuard($q, fn ($u) => $this->adminSave($q, $u, $p['provider'])));
         $r->post('/admin/social/{provider}/action', fn (Request $q, array $p) => $this->adminGuard($q, fn ($u) => $this->adminAction($q, $u, $p['provider'])));
@@ -143,9 +143,6 @@ final class SocialController extends BaseController
         if ($user instanceof Response) {
             return $user;
         }
-        if ($deny = $this->denyFeature($user, 'social_login')) {
-            return $deny;
-        }
         if (!preg_match(self::KEY, $key) || !$this->confirmed($user, $q)) {
             return $this->accountPage($q, ['Die Passwortbestätigung ist falsch oder es gab zu viele Versuche.'], 403);
         }
@@ -253,9 +250,6 @@ final class SocialController extends BaseController
 
     private function adminSave(Request $q, array $actor, ?string $key): Response
     {
-        if ($deny = $this->denyFeature($actor, 'social_login')) {
-            return $deny;
-        }
         if ($key !== null && !preg_match(self::KEY, $key)) {
             throw new \InvalidArgumentException('Anbieter nicht gefunden.');
         }

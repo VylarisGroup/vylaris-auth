@@ -19,7 +19,6 @@ final class Maintenance
         private int $auditRetentionDays = 365,
         private ?PrivacyService $privacy = null,
         private int $ipRetentionDays = 30,
-        private ?\Vylaris\License\LicenseService $license = null,
         private ?\Vylaris\Update\Updater $updater = null,
     ) {
     }
@@ -44,7 +43,6 @@ final class Maintenance
         ] + ($privacy === null ? [] : ['audit_ips_removed' => $privacy->anonymizeAuditData($this->ipRetentionDays)] + (function () use ($privacy) {
             $r = $privacy->processInactiveAccounts();
             return ['inactive_warned' => $r['warned'], 'inactive_erased' => $r['erased']];
-        })()) + ($this->license === null ? [] : ['license_refreshed' => $this->license->refreshStale(), 'license_releases_done' => $this->license->retryReleases()])
-            + ($this->updater === null ? [] : ['update_checked' => (int) $this->updater->checkIfDue()]);
+        })()) + ($this->updater === null ? [] : ['update_checked' => (int) $this->updater->checkIfDue()]);
     }
 }

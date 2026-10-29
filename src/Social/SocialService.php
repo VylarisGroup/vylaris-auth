@@ -320,12 +320,7 @@ final class SocialService
             return new SocialResult('login', $uid, $next);
         }
 
-        // Unbekannte Identität -> evtl. Registrierung. Mit Lizenzpflicht entstehen Konten nur über die Registrierung
-        // mit Lizenzschlüssel (bzw. durch den Admin); der Anbieter lässt sich danach im Konto verknüpfen.
-        if ($this->config->get('license.required', true)) {
-            $this->audit->log('social.signup_refused', null, ['provider' => $key, 'reason' => 'license_required']);
-            return SocialResult::error('Neue Konten können nur mit einem Lizenzschlüssel über die Registrierung angelegt werden. Registrieren Sie sich zuerst mit E-Mail und Passwort und verknüpfen Sie den Anbieter danach unter „Konto → Verknüpfte Anmeldungen“.');
-        }
+        // Unbekannte Identität -> evtl. Registrierung.
         if (!$this->config->get('security.allow_registration', true) || (int) $p['allow_signup'] !== 1) {
             return SocialResult::error('Mit diesem Konto des Anbieters ist noch kein Zugang verknüpft. Melden Sie sich normal an und verknüpfen Sie den Anbieter unter „Konto → Verknüpfte Anmeldungen“.');
         }

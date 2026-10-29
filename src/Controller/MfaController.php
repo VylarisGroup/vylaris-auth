@@ -256,10 +256,6 @@ final class MfaController extends BaseController
         if ($user === null) {
             return Response::json(['error' => 'Nicht angemeldet'], 401);
         }
-        if (!$this->app->license->allows((int) $user['id'], 'passkeys')) {
-            $this->app->audit->log('license.feature_denied', (int) $user['id'], ['feature' => 'passkeys']);
-            return Response::json(['error' => 'Passkeys sind in Ihrer Lizenz nicht enthalten.'], 403);
-        }
         return Response::json($this->app->passkeys->registrationOptions($this->app->session(), (int) $user['id']));
     }
 
@@ -268,9 +264,6 @@ final class MfaController extends BaseController
         $user = $this->app->currentUser();
         if ($user === null) {
             return Response::json(['error' => 'Nicht angemeldet'], 401);
-        }
-        if (!$this->app->license->allows((int) $user['id'], 'passkeys')) {
-            return Response::json(['error' => 'Passkeys sind in Ihrer Lizenz nicht enthalten.'], 403);
         }
         $body = $q->json() ?? [];
         try {

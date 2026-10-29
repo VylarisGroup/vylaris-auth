@@ -3,17 +3,15 @@
 Format: `## Version – Datum`, darunter Stichpunkte mit `- `. Neueste Version zuerst.
 Die Einträge bis zur installierten Version werden jedem Administrator einmal im Admin-Bereich angezeigt.
 
+## 2.0.0 – 2026-10-29
+- Entfernt: Das gesamte Lizenzsystem. VylarisAuth läuft wieder ohne Schlüssel, Lizenzpool, Plätze oder Funktionsbeschränkungen: Registrierung, Anlegen von Konten, Social Login, Passkeys, Anwendungen, Audit-Log und Branding stehen allen offen. Die Seiten „Admin → Lizenz“ und „Konto → Lizenz“, die Lizenz-Karte in der Nutzerbearbeitung und der Lizenz-Schritt im Assistenten entfallen, ebenso der Cron-Teil und die Konfiguration. Beim Update löscht eine Migration die zugehörigen Datenbanktabellen und Protokolleinträge; ein `license`-Block in der `config/config.php` wird ignoriert und kann gelöscht werden.
+- Geändert: Neue Konten über Social Login sind wieder möglich, wenn der Anbieter „Registrierung erlauben“ aktiviert hat und eine bestätigte E-Mail-Adresse liefert.
+
 ## 1.12.0 – 2026-10-24
 - Neu: Am Ende jeder Seitenleiste (Administration und Mein Konto) steht dezent „powered by VylarisAuth“ mit Link auf https://vylaris.ch. Der Hinweis ist nicht konfigurierbar: Er hat kein Branding-Feld, fehlt er in einem angepassten Template, wird er vom System ergänzt, seine Darstellung steht mit `!important` am Ende des Theme-CSS, und eigenes CSS, das ihn oder die Seitenleiste ausblendet, wird beim Speichern abgelehnt.
 
 ## 1.11.0 – 2026-10-22
-- Neu: **Lizenz wechseln** in der Nutzerbearbeitung (Admin → Benutzer → Nutzer). Der Admin wählt eine Lizenz aus dem Pool; der Nutzer belegt dort einen Platz und wird erst danach von der alten Lizenz abgemeldet. Schlägt die neue Belegung fehl (voll, gesperrt, abgelaufen, Server nicht erreichbar), bleibt alles unverändert. Konten ohne Lizenz können hier ebenfalls eine zugewiesen bekommen. Jeder Wechsel steht im Audit-Log (`license.moved`).
 - Geändert: Boxicons werden vom CDN (jsDelivr, mit Subresource Integrity) geladen. Die CSP erlaubt dafür `https://cdn.jsdelivr.net` für Styles und Schriften, Skripte bleiben auf `'self'` beschränkt. Mit `'ui' => ['icons_cdn' => false]` in `config/config.php` wird wieder die lokale Kopie verwendet.
-
-## 1.10.0 – 2026-10-18
-- Geändert: Schlüssel werden nur noch im **Lizenzpool** (Admin → Lizenz) eingegeben. Bei der Nutzererstellung wählt der Admin die Lizenz aus dem Pool (oder „Automatisch“); Registrierung und Konto → Lizenz fragen keinen Schlüssel mehr ab. Bereits genutzte Schlüssel werden beim Update automatisch in den Pool übernommen.
-- Neu: Nutzer mit ungültiger Lizenz (abgelaufen, gesperrt, unbekannt, anderes Produkt, Platz zurückgesetzt) werden bei der nächsten Prüfung automatisch auf den nächsten verfügbaren Pool-Schlüssel umgestuft; der alte Platz wird freigegeben. Gibt es keinen, erfolgt die Umstufung sobald ein Schlüssel verfügbar ist.
-- Verbessert: Bessere Gegenprüfung. Pool-Schlüssel werden regelmäßig beim Lizenzserver geprüft (Status, Plan, Plätze, Ablauf in der Pool-Tabelle). Der Lizenzstatus wird zusätzlich beim Login nachgeprüft und hängt nicht mehr allein vom Cron ab. Wird ein Platz zwischen Vorabprüfung und Belegung vergeben, weicht die Anlage auf den nächsten Pool-Schlüssel aus.
 
 ## 1.9.1 – 2026-10-17
 - Geändert: Social Login überspringt jetzt den eigenen zweiten Faktor (TOTP/Passkey); der Anbieter-Login gilt als vollwertig. Der Admin-Bereich verlangt weiterhin einen zweiten Faktor. Wer den alten Ablauf will, setzt in `config/config.php` unter `security` `'social_skips_mfa' => false`.
@@ -40,7 +38,6 @@ Die Einträge bis zur installierten Version werden jedem Administrator einmal im
 - Neu: Auf der Detailseite eines Social-Anbieters (Admin → Social Login) stehen die letzten fehlgeschlagenen Anmeldungen mit Fehlercode und einer verständlichen Erklärung, so lässt sich die Ursache ohne Log-Suche finden.
 
 ## 1.8.0 – 2026-10-16
-- Lizenzschlüssel müssen nur noch einmal eingegeben werden: Unter Admin → Lizenz hinterlegte Schlüssel (oder der Schlüssel, den ein Administrator beim Anlegen eines Kontos eingibt) werden für jedes neue Konto automatisch verwendet, bis alle Plätze belegt sind; danach wird der nächste hinterlegte Schlüssel genommen. Das Schlüsselfeld in der Registrierung entfällt, solange ein Schlüssel hinterlegt ist.
 - Behoben: Der Hell/Dunkel-Umschalter war in manchen Designs kaum zu erkennen. Er hat jetzt Rahmen und Hintergrund und auf dem Handy eine Beschriftung.
 
 ## 1.7.0 – 2026-10-16
@@ -57,9 +54,6 @@ Die Einträge bis zur installierten Version werden jedem Administrator einmal im
 - Dokumentation zur geschützten .htaccess ergänzt.
 
 ## 1.5.0 – 2026-10-16
-- Lizenzserver, Produkt und öffentlicher Schlüssel sind fest eingebaut und nicht mehr konfigurierbar.
 - Die Update-Quelle (GitHub-Repository) wird nur serverseitig in der Konfiguration festgelegt.
 - Aktualisierung aus GitHub-Releases: automatische Prüfung, Installation per Klick, Sicherung und Rückgängig-Funktion.
 
-## 1.0.0 – 2026-10-14
-- Erste Version: SSO/OIDC-Anbieter mit Social Login, Passkeys, Lizenzsystem und DSGVO-Funktionen.

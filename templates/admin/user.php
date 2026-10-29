@@ -34,26 +34,6 @@
 <?php elseif (!$self): ?>
 <p class="mt-6 text-sm text-slate-500">Dieses Konto kann nur von Superadmins verwaltet werden.</p>
 <?php endif; ?>
-<?php if ($canManage && !empty($licRequired)): ?>
-<section class="card mt-6">
-  <h2 class="font-semibold"><i class="bx bx-key"></i> Lizenz</h2>
-  <?php if (!empty($lic['keyless'])): ?>
-  <p class="mt-1 text-sm text-slate-500">Dieses Konto hat noch keinen Lizenzplatz. Wählen Sie eine Lizenz aus dem Pool, um ihm einen Platz zuzuweisen.</p>
-  <?php else: ?>
-  <p class="mt-1 text-sm text-slate-500">Aktuell: <span class="font-mono"><?= $e($lic['key']) ?></span><?= $lic['plan'] !== '' ? ' · ' . $e($lic['plan']) : '' ?> · <?= $lic['valid'] ? 'gültig' : 'ungültig (' . $e($lic['code']) . ')' ?></p>
-  <?php endif; ?>
-  <?php if (!empty($poolOptions)): ?>
-  <form method="post" action="/admin/users/<?= (int) $u['id'] ?>/license" class="mt-3 flex flex-wrap items-end gap-2"><input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
-    <label class="text-sm grow">Lizenz aus dem Pool
-      <?php $autoOption = false; $currentPoolId = (int) ($lic['poolId'] ?? 0); include __DIR__ . '/../partials/license-select.php'; ?></label>
-    <button class="btn btn-primary" type="submit" data-confirm="Lizenz wechseln? Der Platz bei der alten Lizenz wird freigegeben."><i class="bx bx-transfer"></i> <?= !empty($lic['keyless']) ? 'Lizenz zuweisen' : 'Lizenz wechseln' ?></button>
-  </form>
-  <p class="mt-2 text-xs text-slate-500">Der alte Platz wird erst freigegeben, wenn der neue erfolgreich belegt ist – schlägt das fehl, bleibt alles unverändert.</p>
-  <?php else: ?>
-  <p class="mt-3 text-sm text-slate-500">Der Lizenzpool ist leer. Schlüssel hinterlegen Sie unter Admin → Lizenz.</p>
-  <?php endif; ?>
-</section>
-<?php endif; ?>
 <?php if ($canManage): ?>
 <section class="card mt-6">
   <h2 class="font-semibold"><i class="bx bx-shield-quarter"></i> Datenschutz (DSGVO)</h2>

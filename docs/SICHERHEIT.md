@@ -4,10 +4,6 @@
 
 Superadmin-only, CSRF-geschützt, Wartungsmodus, Archivprüfung (Pfade, Symlinks, Größen), PHP-Syntaxprüfung, Sicherung und automatische Rückstellung (`UpdateTest`). Vertrauensanker ist GitHub (Konto/Repository/Token) – ohne eigene Release-Signatur. Details und Empfehlungen: `UPDATE.md`.
 
-## Lizenzprüfung
-
-Antworten des Lizenzservers werden mit Ed25519 (libsodium) gegen einen fest konfigurierten Schlüssel geprüft; ausgewertet wird nur der signierte Inhalt, Zeitstempel (±5 min) und Schlüsselbezug werden kontrolliert (`LicenseTest`). Die Lizenzpflicht ist **kein Kopierschutz** gegen Betreiber mit Dateizugriff – Details und Grenzen in `LIZENZ.md`.
-
 ## Schutzmaßnahmen (umgesetzt und getestet)
 
 | Bereich | Maßnahme | Test |

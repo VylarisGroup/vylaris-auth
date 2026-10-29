@@ -50,9 +50,6 @@ final class BrandController extends BaseController
 
     private function save(Request $q, array $actor): Response
     {
-        if ($deny = $this->denyFeature($actor, 'whitelabel')) {
-            return $deny;
-        }
         $b = $this->app->brand;
         $actorId = (int) $actor['id'];
         $in = array_filter($q->post, 'is_string');

@@ -6,7 +6,7 @@ if ($section === 'admin') {
         ['/admin', 'bx-home', 'Übersicht'],
         ['Verwaltung', 'bx-group', [['/admin/users', 'bx-user', 'Benutzer'], ['/admin/apps', 'bx-grid-alt', 'Anwendungen'], ['/admin/social', 'bx-log-in-circle', 'Social Login']]],
         ['Sicherheit', 'bx-shield-quarter', [['/admin/audit', 'bx-list-check', 'Audit-Log'], ['/admin/keys', 'bx-key', 'Schlüssel']]],
-        ['System', 'bx-cog', [['/admin/branding', 'bx-palette', 'Branding'], ['/admin/license', 'bx-id-card', 'Lizenz'], ['/admin/update', 'bx-cloud-download', 'Update']]],
+        ['System', 'bx-cog', [['/admin/branding', 'bx-palette', 'Branding'], ['/admin/update', 'bx-cloud-download', 'Update']]],
         ['Assistenten', 'bx-rocket', [['/admin/apps/new', 'bx-plus-circle', 'Neue Anwendung'], ['/admin/users/new', 'bx-user-plus', 'Neuer Benutzer'], ['/admin/social/new', 'bx-link', 'Neuer Social-Anbieter']]],
     ];
 } else {
@@ -15,7 +15,7 @@ if ($section === 'admin') {
         ['/account', 'bx-home', 'Übersicht'],
         ['Sicherheit', 'bx-shield-quarter', [['/account/sessions', 'bx-devices', 'Geräte und Sitzungen'], ['/account/mfa/totp', 'bx-mobile-alt', 'Authenticator-App'], ['/account/mfa/passkeys', 'bx-fingerprint', 'Passkeys'], ['/account/mfa/recovery', 'bx-lock-open-alt', 'Wiederherstellungscodes']]],
         ['Verknüpfungen', 'bx-link', [['/account/social', 'bx-log-in-circle', 'Verknüpfte Konten'], ['/account/apps', 'bx-grid-alt', 'Anwendungen']]],
-        ['Lizenz und Daten', 'bx-id-card', [['/account/license', 'bx-id-card', 'Lizenz'], ['/account/privacy', 'bx-lock-alt', 'Datenschutz']]],
+        ['/account/privacy', 'bx-lock-alt', 'Datenschutz'],
     ];
 }
 // Aktiv ist der Eintrag mit dem längsten passenden Pfad ('/admin' und '/account' nur exakt).

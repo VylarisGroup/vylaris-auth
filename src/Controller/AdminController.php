@@ -13,13 +13,12 @@ final class AdminController extends BaseController
     {
         $r->get('/admin', fn (Request $q) => $this->guard($q, fn ($u) => $this->dashboard($u)));
         $r->post('/admin/changelog/seen', fn (Request $q) => $this->guard($q, fn ($u) => $this->changelogSeen($u)));
-        $r->get('/admin/users/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->render('admin/wizard_user', ['licenseRequired' => $this->app->license->required(), 'poolOptions' => $this->app->license->poolOptions()])));
-        $r->get('/admin/apps/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->denyFeature($u, 'oidc_apps') ?? $this->render('admin/wizard_app')));
+        $r->get('/admin/users/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->render('admin/wizard_user')));
+        $r->get('/admin/apps/new', fn (Request $q) => $this->guard($q, fn ($u) => $this->render('admin/wizard_app')));
         $r->get('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->users($q, $u)));
         $r->post('/admin/users', fn (Request $q) => $this->guard($q, fn ($u) => $this->createUser($q, $u)));
         $r->get('/admin/users/{id}', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->userDetail((int) $p['id'], $u)));
         $r->post('/admin/users/{id}/action', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->userAction($q, (int) $p['id'], $u)));
-        $r->post('/admin/users/{id}/license', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->moveLicense($q, (int) $p['id'], $u)));
         $r->post('/admin/users/{id}/app-role', fn (Request $q, array $p) => $this->guard($q, fn ($u) => $this->appRole($q, (int) $p['id'], $u)));
         $r->get('/admin/apps', fn (Request $q) => $this->guard($q, fn ($u) => $this->apps()));
         $r->post('/admin/apps', fn (Request $q) => $this->guard($q, fn ($u) => $this->createApp($q, $u)));
@@ -68,20 +67,14 @@ final class AdminController extends BaseController
         $page = max(1, (int) $q->str('page', '1'));
         return $this->render('admin/users', [
             'users' => $this->app->users->search($term, 50, ($page - 1) * 50),
-            'term' => $term, 'page' => $page, 'licenseRequired' => $this->app->license->required(), 'poolOptions' => $this->app->license->poolOptions(),
+            'term' => $term, 'page' => $page,
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);
     }
 
     private function createUser(Request $q, array $actor): Response
     {
-        // Die Lizenz kommt ausschließlich aus dem Pool: leer = automatisch, sonst die gewählte Pool-Zeile.
-        $poolId = (int) $q->str('license_pool_id');
-        $key = '';
-        if ($poolId > 0) {
-            $key = $this->app->license->poolKey($poolId) ?? throw new \InvalidArgumentException('Die gewählte Lizenz ist nicht (mehr) im Pool.');
-        }
-        $this->app->admin->createUser((int) $actor['id'], $q->str('email'), $q->str('name'), $key);
+        $this->app->admin->createUser((int) $actor['id'], $q->str('email'), $q->str('name'));
         $this->app->session()->flash('ok', 'Konto angelegt, Einladung wird per E-Mail versendet.');
         return $this->redirect('/admin/users');
     }
@@ -106,42 +99,12 @@ final class AdminController extends BaseController
             'sessions' => $this->app->sessions->listForUser($id),
             'mfa' => ['totp' => $this->app->mfa->hasTotp($id), 'passkeys' => $this->app->passkeys->count($id)],
             'apps' => $apps,
-            'licRequired' => $this->app->license->required(),
-            'lic' => $this->licenseView($id),
-            'poolOptions' => $this->app->license->poolOptions(),
             'audit' => $this->app->audit->recent(15, null, $id),
             'canManage' => $actorId !== $id && $this->app->policy->canManageUser($actorId, $id),
             'isSuper' => $this->app->policy->isSuperAdmin($actorId),
             'self' => $actorId === $id,
             'flash' => $this->app->session()->flash('ok'), 'err' => $this->app->session()->flash('err'),
         ]);
-    }
-
-    private function moveLicense(Request $q, int $id, array $actor): Response
-    {
-        $poolId = (int) $q->str('license_pool_id');
-        $key = $poolId > 0 ? $this->app->license->poolKey($poolId) : null;
-        if ($key === null) {
-            throw new \InvalidArgumentException('Bitte eine Lizenz aus dem Pool auswählen.');
-        }
-        $this->app->admin->moveLicense((int) $actor['id'], $id, $key);
-        $this->app->session()->flash('ok', 'Lizenz gewechselt: Der Platz bei der alten Lizenz wurde freigegeben, bei der neuen belegt.');
-        return $this->redirect('/admin/users/' . $id);
-    }
-
-    /** Lizenzanzeige für die Benutzerseite: maskierter Schlüssel, Status und die Pool-ID der aktuellen Lizenz (falls im Pool). */
-    private function licenseView(int $userId): array
-    {
-        $s = $this->app->license->state($userId);
-        $currentPoolId = 0;
-        foreach ($this->app->license->pool() as $p) {
-            if ($s['key'] !== '' && strcasecmp((string) $p['license_key'], $s['key']) === 0) {
-                $currentPoolId = (int) $p['id'];
-            }
-        }
-        $s['key'] = $s['key'] !== '' ? \Vylaris\License\LicenseService::mask($s['key']) : '';
-        $s['poolId'] = $currentPoolId;
-        return $s;
     }
 
     private function userAction(Request $q, int $id, array $actor): Response
@@ -190,9 +153,6 @@ final class AdminController extends BaseController
 
     private function createApp(Request $q, array $actor): Response
     {
-        if ($deny = $this->denyFeature($actor, 'oidc_apps')) {
-            return $deny;
-        }
         $res = $this->app->clients->create(
             $q->str('name'), $this->lines($q->str('redirect_uris')), $this->lines($q->str('logout_uris')),
             $q->str('type') !== 'public', $q->str('scopes', 'openid profile email'), $q->str('skip_consent') === '1', $q->str('access_policy', 'all'), (int) $actor['id']
@@ -227,10 +187,7 @@ final class AdminController extends BaseController
             return $this->render('error', ['title' => 'Nicht gefunden', 'message' => 'Anwendung nicht gefunden.'], 404);
         }
         $flash = null;
-        if (in_array($q->str('action'), ['settings', 'uris', 'role_create'], true) && ($deny = $this->denyFeature($actor, 'oidc_apps'))) {
-            return $deny; // Ändern erfordert den Scope; Deaktivieren/Widerrufen/Secret-Rotation bleiben immer möglich
-        }
-        switch ($q->str('action')) {
+                switch ($q->str('action')) {
             case 'settings':
                 $svc->updateSettings($id, $q->str('name'), $q->str('scopes'), $q->str('skip_consent') === '1', $q->str('access_policy', 'all'), $a);
                 $flash = 'Einstellungen gespeichert.';
@@ -273,9 +230,6 @@ final class AdminController extends BaseController
 
     private function audit(Request $q, array $actor): Response
     {
-        if ($deny = $this->denyFeature($actor, 'audit_log')) {
-            return $deny;
-        }
         $event = preg_match('/^[a-z0-9_.]{1,80}$/', $q->str('event')) ? $q->str('event') : null;
         $uid = ctype_digit($q->str('user')) && $q->str('user') !== '' ? (int) $q->str('user') : null;
         return $this->render('admin/audit', ['events' => $this->app->audit->recent(200, $event, $uid), 'event' => $event ?? '', 'uid' => $uid]);

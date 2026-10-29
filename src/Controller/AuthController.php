@@ -83,7 +83,7 @@ final class AuthController extends BaseController
 
     private function register(Request $q): Response
     {
-        $res = $this->app->auth->register($q->str('email'), $q->str('password'), $q->str('name'), $q->ip(), $q->str('accept_privacy') === '1', $this->app->brand->get('privacy_version'), ''); // Lizenz kommt immer aus dem Pool
+        $res = $this->app->auth->register($q->str('email'), $q->str('password'), $q->str('name'), $q->ip(), $q->str('accept_privacy') === '1', $this->app->brand->get('privacy_version'));
         if (!$res['ok']) {
             return $this->render('auth/register', ['errors' => $res['errors'], 'old' => ['email' => $q->str('email'), 'name' => $q->str('name')]], 422);
         }

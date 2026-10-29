@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Vylaris\Service;
 
 use Vylaris\Core\{Clock, Config, Database, Session};
-use Vylaris\License\{LicenseException, LicenseService};
 use Vylaris\Repository\UserRepository;
 
 final class AuthService
@@ -23,14 +22,13 @@ final class AuthService
         private Mailer $mailer,
         private AuditLogger $audit,
         private SessionService $sessions,
-        private ?LicenseService $license = null,
     ) {
     }
 
     // ---------------------------------------------------------------- Registrierung
 
     /** @return array{ok:bool,errors:string[]} – bei vorhandener E-Mail bewusst gleiche Antwort (keine Enumeration) */
-    public function register(string $email, string $password, string $displayName, string $ip = '', bool $privacyAccepted = false, string $privacyVersion = '', string $licenseKey = ''): array
+    public function register(string $email, string $password, string $displayName, string $ip = '', bool $privacyAccepted = false, string $privacyVersion = ''): array
     {
         if (!$this->config->get('security.allow_registration', true)) {
             return ['ok' => false, 'errors' => ['Die Registrierung ist derzeit deaktiviert.']];
@@ -48,28 +46,12 @@ final class AuthService
         if ($this->config->get('privacy.require_acceptance', true) && !$privacyAccepted) {
             $errors[] = 'Bitte bestätigen Sie, dass Sie die Datenschutzerklärung zur Kenntnis genommen haben.';
         }
-        $licensed = $this->license !== null && $this->license->required();
-        $licenseKey = LicenseService::normalizeKey($licenseKey);
-        $autoKey = $licenseKey === '';
-        if ($licensed && $licenseKey === '' && !$this->license->hasPool()) {
-            $errors[] = 'Die Registrierung ist derzeit nicht möglich: Es ist keine Lizenz hinterlegt. Bitte wenden Sie sich an den Administrator.';
-        }
         if ($errors) {
             return ['ok' => false, 'errors' => $errors];
         }
         if ($ip !== '' && !$this->limiter->hit('register:' . $ip, 10, 3600)) {
             return ['ok' => false, 'errors' => ['Zu viele Registrierungen. Bitte später erneut versuchen.']];
         }
-        if ($licensed) {
-            // Schlüssel vorab prüfen (gültig, richtiges Produkt, freier Platz) – bevor irgendetwas angelegt wird.
-            try {
-                $licenseKey = $this->license->resolveKey($licenseKey);
-            } catch (LicenseException $e) {
-                $this->audit->log('auth.register_license_refused', null, ['reason' => $e->licenseCode, 'ref' => $this->emailRef($email)]);
-                return ['ok' => false, 'errors' => [$e->getMessage()]];
-            }
-        }
-
         $existing = $this->users->findByEmail($email);
         if ($existing) {
             $this->mailer->queue($email, 'Registrierung bei {app}', "Für diese E-Mail-Adresse existiert bereits ein Konto.\n\nFalls Sie sich nicht erneut registrieren wollten, können Sie diese Nachricht ignorieren. Ihr Passwort können Sie bei Bedarf über \"Passwort vergessen\" zurücksetzen:\n" . $this->config->baseUrl() . "/password/forgot\n");
@@ -78,29 +60,14 @@ final class AuthService
         }
 
         $verified = !$this->config->get('security.require_email_verification', true);
-        $bound = null;
-        try {
-            $id = $this->db->transaction(function () use ($email, $password, $displayName, $verified, $privacyAccepted, $privacyVersion, $licensed, $licenseKey, $autoKey, &$bound): int {
-                $id = $this->users->create($email, $this->passwords->hash($password), $displayName, $verified);
-                $this->users->assignRole($id, 'user');
-                if ($privacyAccepted) {
-                    $this->db->update('users', ['privacy_accepted_at' => Clock::db(), 'privacy_version' => mb_substr($privacyVersion, 0, 20)], 'id', $id);
-                }
-                if ($licensed) {
-                    // Belegt den Platz beim Lizenzserver; schlägt das fehl, wird das Konto nicht angelegt.
-                    $reply = $this->license->bind($id, $licenseKey, $autoKey);
-                    $bound = [$reply->key, $this->license->hwid($id)];
-                }
-                return $id;
-            });
-        } catch (LicenseException $e) {
-            return ['ok' => false, 'errors' => [$e->getMessage()]];
-        } catch (\Throwable $e) {
-            if ($bound !== null) {
-                $this->license->releaseDevice($bound[0], $bound[1]); // Platz nicht verfallen lassen
+        $id = $this->db->transaction(function () use ($email, $password, $displayName, $verified, $privacyAccepted, $privacyVersion): int {
+            $id = $this->users->create($email, $this->passwords->hash($password), $displayName, $verified);
+            $this->users->assignRole($id, 'user');
+            if ($privacyAccepted) {
+                $this->db->update('users', ['privacy_accepted_at' => Clock::db(), 'privacy_version' => mb_substr($privacyVersion, 0, 20)], 'id', $id);
             }
-            throw $e;
-        }
+            return $id;
+        });
         $this->audit->log('auth.register', $id);
         if (!$verified) {
             $this->sendVerification($id, $email);
@@ -303,11 +270,6 @@ final class AuthService
         $session->forget('mfa_pending_uid');
         $session->forget('mfa_pending_at');
         $session->bindUser($userId);
-        try {
-            $this->license?->refreshIfStale($userId); // Lizenzstatus bei der Anmeldung nachprüfen (ohne Cron-Abhängigkeit)
-        } catch (\Throwable) {
-            // Lizenzprüfung darf die Anmeldung nie verhindern
-        }
         $session->set('auth_time', Clock::now());
         $session->set('amr', $amr);
         $session->set('csrf', bin2hex(random_bytes(32)));

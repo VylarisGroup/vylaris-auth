@@ -74,15 +74,6 @@ return [
         'check_hours' => 12,     // Cron prüft höchstens so oft auf neue Releases
     ],
 
-    // Lizenzsystem (TRS License) – siehe docs/LIZENZ.md
-    'license' => [
-        'required'      => true,                              // neue Konten brauchen einen Lizenzschlüssel
-        // Lizenzserver, Produkt-Kennung und öffentlicher Schlüssel sind fest in die Software eingebaut
-        // und lassen sich hier bewusst nicht ändern.
-        'grace_days'    => 7,                                 // so lange gilt der letzte bestätigte Stand ohne Kontakt zum Lizenzserver
-        'refresh_seconds' => 3600,                            // Cron prüft Lizenzen frühestens nach dieser Zeit erneut
-        'keyless_features' => 'all',                          // Funktionen für Bestandskonten ohne Schlüssel: 'all' oder Liste, z. B. ['passkeys']
-    ],
     'oidc' => [
         'private_key_dir'      => __DIR__ . '/../var/keys',
         'require_nonce'        => true,

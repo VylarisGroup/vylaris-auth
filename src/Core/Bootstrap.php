@@ -34,7 +34,7 @@ final class Bootstrap
         foreach (['Vylaris\\Controller\\MfaController' => 'mfa', 'Vylaris\\Controller\\OidcController' => 'oidc',
                   'Vylaris\\Controller\\AdminController' => 'admin', 'Vylaris\\Controller\\ApiController' => 'api',
                   'Vylaris\\Controller\\SocialController' => 'social', 'Vylaris\\Controller\\BrandController' => 'brand',
-                  'Vylaris\\Controller\\PrivacyController' => 'privacy', 'Vylaris\\Controller\\LicenseController' => 'license', 'Vylaris\\Controller\\UpdateController' => 'update'] as $class => $name) {
+                  'Vylaris\\Controller\\PrivacyController' => 'privacy', 'Vylaris\\Controller\\UpdateController' => 'update'] as $class => $name) {
             if (class_exists($class)) {
                 $app->registerModule($name, new $class($app));
             }

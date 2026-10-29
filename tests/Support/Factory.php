@@ -24,7 +24,6 @@ final class Factory
             ],
             'webauthn' => ['rp_name' => 'Test', 'rp_id' => 'auth.test'],
             'update' => ['repo' => ''], // Tests sprechen nie mit GitHub
-            'license' => ['required' => false], // LicenseTest schaltet die Pflicht gezielt ein
             'oidc' => ['access_token_ttl' => 600, 'id_token_ttl' => 600, 'refresh_token_ttl' => 2592000, 'auth_code_ttl' => 60],
         ];
         return new Config(array_replace_recursive($base, $override));
@@ -69,12 +68,12 @@ final class Factory
     }
 
     /** Vollständige App (alle registrierten Module) mit Mail-Array-Transport. */
-    public static function app(array $configOverride = [], ?\Vylaris\Social\HttpClient $http = null, ?\Vylaris\Update\UpdateSource $update = null, ?\Vylaris\License\LicenseClient $license = null): object
+    public static function app(array $configOverride = [], ?\Vylaris\Social\HttpClient $http = null, ?\Vylaris\Update\UpdateSource $update = null): object
     {
         $config = self::config($configOverride);
         $db = self::db($config);
         $mail = new ArrayMailTransport();
-        $app = new App($config, $db, $mail, dirname(__DIR__, 2), $http, $update, $license);
+        $app = new App($config, $db, $mail, dirname(__DIR__, 2), $http, $update);
         \Vylaris\Core\Bootstrap::registerModules($app);
         return (object) compact('app', 'config', 'db', 'mail');
     }

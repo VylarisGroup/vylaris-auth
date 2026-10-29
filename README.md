@@ -25,7 +25,6 @@ Ausführlich mit Checkliste und Fehlerbehebung: **[docs/PLESK.md](docs/PLESK.md)
 | [docs/OIDC-INTEGRATION.md](docs/OIDC-INTEGRATION.md) | Anbindung einer Anwendung (Endpunkte, Claims, Ablauf) |
 | [docs/DATENSCHUTZ.md](docs/DATENSCHUTZ.md) | DSGVO: Funktionen (Export, Löschung, Fristen), Pflichten des Betreibers, Vorlagen (VVT, TOMs, Panne) |
 | [docs/UPDATE.md](docs/UPDATE.md) | Aktualisierung aus GitHub-Releases (Einrichtung, Ablauf, Rückstellen, Sicherheit) |
-| [docs/LIZENZ.md](docs/LIZENZ.md) | Lizenzpflicht (TRS License): Schlüssel bei Registrierung, Platzlimit, Scopes, Ausfallverhalten, Grenzen |
 | [docs/WHITELABEL.md](docs/WHITELABEL.md) | Whitelabel: Name, Logo, Farben, Texte, Hell/Dunkel (Standard dunkel), Sicherheitsregeln |
 | [docs/SOCIAL-LOGIN.md](docs/SOCIAL-LOGIN.md) | Anmeldung über externe Anbieter: Einrichtung je Anbieter, Konto-Regeln, Sicherheit |
 | [docs/API.md](docs/API.md) | REST-Endpunkte für externe Apps |

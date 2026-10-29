@@ -23,8 +23,6 @@
     </ul>
     <h2 class="mt-5 text-lg font-semibold"><i class="bx bx-link"></i> Verknüpfte Anmeldungen</h2>
     <p class="mt-2 text-sm">Google, Microsoft, GitHub &amp; Co. · <a class="link" href="/account/social">verwalten</a></p>
-    <h2 class="mt-5 text-lg font-semibold"><i class="bx bx-id-card"></i> Lizenz</h2>
-    <p class="mt-2 text-sm">Lizenzschlüssel, Plan und freigeschaltete Funktionen · <a class="link" href="/account/license">öffnen</a></p>
     <h2 class="mt-5 text-lg font-semibold"><i class="bx bx-shield-quarter"></i> Datenschutz</h2>
     <p class="mt-2 text-sm">Daten exportieren, E-Mail ändern, Konto löschen · <a class="link" href="/account/privacy">öffnen</a></p>
   </section>

@@ -124,7 +124,6 @@ final class Installer
                 'private_key_dir' => $this->root . '/var/keys', 'require_nonce' => true,
                 'access_token_ttl' => 600, 'id_token_ttl' => 600, 'refresh_token_ttl' => 2592000, 'auth_code_ttl' => 60,
             ],
-            'license' => ['required' => true, 'grace_days' => 7, 'refresh_seconds' => 3600, 'keyless_features' => 'all'],
             'update' => ['repo' => $repo, 'token' => $token, 'check_hours' => 12],
             'webauthn' => ['rp_name' => $appName, 'rp_id' => (string) $host],
             'paths' => ['log_dir' => $this->root . '/var/log'],

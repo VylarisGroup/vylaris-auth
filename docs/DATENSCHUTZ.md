@@ -42,10 +42,9 @@
 3. **Social Login:** Jeder aktivierte Anbieter (Google, Microsoft, GitHub, GitLab, Discord …) ist ein eigener Verantwortlicher bzw. Empfänger; Drittlandübermittlung (USA) beachten und in der Erklärung nennen (geschieht automatisch, Zusatztext unter „Weitere Hinweise“). Wer das nicht will: Anbieter deaktivieren.
 4. **Verbundene Anwendungen:** Jede Anwendung, die SSO nutzt, braucht **eigene** Datenschutzerklärung und eigene Löschprozesse. *VylarisAuth löscht keine Daten in angeschlossenen Anwendungen* – bei einer Löschanfrage Anwendungen separat bereinigen (Liste: Admin → Anwendungen; Export enthält die Freigaben des Nutzers).
 5. **Backups:** Gelöschte Daten bleiben bis zum Ablauf der Datenbank-Backups darin enthalten. Backups kurz halten (Empfehlung ≤ 30 Tage), verschlüsselt speichern, und bei Wiederherstellung Löschungen erneut ausführen (Audit-Log `privacy.account_erased` dokumentiert die IDs).
-6. **Lizenzserver:** Mit aktiver Lizenzpflicht erhält der Lizenzserver Lizenzschlüssel und eine pseudonyme Geräte-ID je Konto (keine E-Mail, kein Name; siehe `LIZENZ.md`). Als Empfänger/Auftragsverarbeiter ins Verzeichnis aufnehmen und ggf. in der Datenschutzerklärung unter „Weitere Hinweise“ nennen.
-7. **Cron einrichten** und `config/config.php` → `privacy`-Block prüfen (siehe `config.example.php`).
-8. **Verzeichnis der Verarbeitungstätigkeiten, TOMs, ggf. DSFA** führen (Vorlagen unten). Für reine SSO-Dienste ist eine DSFA meist nicht erforderlich; prüfen Sie das bei Verarbeitung besonderer Daten in angeschlossenen Anwendungen.
-9. **Mitarbeitende** (Admins) auf Vertraulichkeit verpflichten; Admin-Zugriff ist MFA-pflichtig und protokolliert.
+6. **Cron einrichten** und `config/config.php` → `privacy`-Block prüfen (siehe `config.example.php`).
+7. **Verzeichnis der Verarbeitungstätigkeiten, TOMs, ggf. DSFA** führen (Vorlagen unten). Für reine SSO-Dienste ist eine DSFA meist nicht erforderlich; prüfen Sie das bei Verarbeitung besonderer Daten in angeschlossenen Anwendungen.
+8. **Mitarbeitende** (Admins) auf Vertraulichkeit verpflichten; Admin-Zugriff ist MFA-pflichtig und protokolliert.
 
 ## 3. Prozess Betroffenenanfragen (Frist: 1 Monat)
 

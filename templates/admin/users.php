@@ -25,9 +25,6 @@
     <input type="hidden" name="_csrf" value="<?= $e($csrf) ?>">
     <input class="input w-full" type="email" name="email" placeholder="E-Mail" required maxlength="255">
     <input class="input w-full" name="name" placeholder="Anzeigename" required maxlength="120">
-    <?php if (!empty($licenseRequired)): ?>
-      <?php if (!empty($poolOptions)): require __DIR__ . '/../partials/license-select.php'; else: ?><p class="alert alert-err sm:col-span-2">Kein Lizenzschlüssel im Pool – zuerst unter <a class="link" href="/admin/license">Admin → Lizenz</a> hinterlegen.</p><?php endif; ?>
-    <?php endif; ?>
     <button class="btn btn-primary" type="submit">Anlegen</button>
   </form>
 </section>

@@ -25,7 +25,7 @@ $lock = fopen($root . '/var/cron.lock', 'c');
 if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
     exit(0);
 }
-$m = new Maintenance($app->db, $app->mailer, $app->sessions, $app->tokens, $app->limiter, $app->audit, $app->keys, (int) $app->config->get('security.audit_retention_days', 365), $app->privacy, (int) $app->config->get('privacy.ip_retention_days', 30), $app->license, $app->updater);
+$m = new Maintenance($app->db, $app->mailer, $app->sessions, $app->tokens, $app->limiter, $app->audit, $app->keys, (int) $app->config->get('security.audit_retention_days', 365), $app->privacy, (int) $app->config->get('privacy.ip_retention_days', 30), $app->updater);
 $res = $m->run();
 if (in_array('-v', $argv, true)) {
     foreach ($res as $k => $v) {
